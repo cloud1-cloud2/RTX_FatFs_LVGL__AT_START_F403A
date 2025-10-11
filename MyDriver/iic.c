@@ -3,7 +3,7 @@
 
 void iic_init()
 {
-	 crm_periph_clock_enable(CRM_GPIOE_PERIPH_CLOCK, TRUE);
+	crm_periph_clock_enable(CRM_GPIOE_PERIPH_CLOCK, TRUE);
 }
 
 static void iic_delay()
@@ -32,16 +32,18 @@ static void iic_sda_in(bool f)
     }
 }
 
-void iic_init()
-{
-    //No need here
-}
-
 void iic_start_generate()
 {   
     iic_sda_in(false);
     
+    IIC_SDA_H;
+    IIC_SCL_H;
+    iic_delay();
+    
     IIC_SDA_L;
+    iic_delay();
+    
+    IIC_SCL_L;
     iic_delay();
 }
 
@@ -50,8 +52,6 @@ void iic_stop_generate()
     iic_sda_in(false);
     
     IIC_SCL_L;
-    iic_delay();
-    
     IIC_SDA_L;
     iic_delay();
     
@@ -71,14 +71,16 @@ void iic_send_byte(uint8_t b)
         IIC_SCL_L;
         iic_delay();
         
-        if((b&(0x80 >> i))!= 0)
+        if((b & 0x80) != 0)
         {
             IIC_SDA_H;
         }else{
             IIC_SDA_L;
         }
-        iic_delay();
         
+        b <<= 1;
+        
+        iic_delay();
         IIC_SCL_H;
         iic_delay();
     }
@@ -86,26 +88,27 @@ void iic_send_byte(uint8_t b)
 
 uint8_t iic_receive_byte()
 {
-    iic_sda_in(true);
+    uint8_t b = 0;
     
-    uint8_t d;
+    iic_sda_in(true);
     
     for(uint8_t i = 0; i<=7; i++)
     {
         IIC_SCL_L;
         iic_delay();
+        
         IIC_SCL_H;
         iic_delay();
         
-        if(IIC_SDA_STATE == SET)
+        b <<= 1;
+        
+        if(IIC_SDA_STATE != RESET)
         {
-            d |= (0x80 >> i);
-        }else{
-            d &= ~(0x80 >> i);
+            b |= 0x01;
         }
     }
-
-    return d;
+    
+    return b;
 }
 
 void iic_transmit_ack(bool v)
@@ -118,13 +121,19 @@ void iic_transmit_ack(bool v)
     if(v == true)
     {
         IIC_SDA_L;
-        iic_delay();
     }else{
         IIC_SDA_H;
-        iic_delay();
     }
     
+    iic_delay();
+    
     IIC_SCL_H;
+    iic_delay();
+    
+    IIC_SCL_L;
+    iic_delay();
+    
+    IIC_SDA_H;
     iic_delay();
 }
 
@@ -145,7 +154,10 @@ bool iic_receive_ack()
         ack = true;
     }else{
         ack = false;
-    } 
+    }
+    
+    IIC_SCL_L;
+    iic_delay();
     
     return ack;
 }
