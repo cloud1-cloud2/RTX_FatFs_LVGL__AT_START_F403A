@@ -2,6 +2,10 @@
 #include "RTE_Components.h"
 #include CMSIS_device_header
 
+uint8_t fan_mode = 0; //0:正转 1:反转
+uint8_t fan_speed_grade[5] = {45, 55, 70, 85, 100}; //PWM周期设为100个时钟，这里存放比较寄存器的值
+
+/* 函数中的一些配置不影响结果，比如tmr_output_struct.oc_idle_state的设置 */
 void fan_ss6285l_init()
 {
 	gpio_init_type gpio_init_struct;
@@ -46,16 +50,15 @@ void fan_ss6285l_init()
 
   /* configure channel 1 output settings */
   tmr_output_struct.oc_mode = TMR_OUTPUT_CONTROL_PWM_MODE_A;
-  tmr_output_struct.oc_output_state = TRUE;
-  tmr_output_struct.occ_output_state = TRUE;
+  tmr_output_struct.oc_output_state = FALSE;  
+  tmr_output_struct.occ_output_state = FALSE; 
   tmr_output_struct.oc_polarity = TMR_OUTPUT_ACTIVE_HIGH;
-  tmr_output_struct.occ_polarity = TMR_OUTPUT_ACTIVE_LOW;
-  tmr_output_struct.oc_idle_state = FALSE;
-  tmr_output_struct.occ_idle_state = FALSE;
+  tmr_output_struct.occ_polarity = TMR_OUTPUT_ACTIVE_HIGH;
+  tmr_output_struct.oc_idle_state = FALSE;   
+  tmr_output_struct.occ_idle_state = FALSE;   
   tmr_output_channel_config(TMR1, TMR_SELECT_CHANNEL_1, &tmr_output_struct);
   tmr_channel_value_set(TMR1, TMR_SELECT_CHANNEL_1, 0);
   tmr_output_channel_buffer_enable(TMR1, TMR_SELECT_CHANNEL_1, FALSE);
-
   tmr_output_channel_immediately_set(TMR1, TMR_SELECT_CHANNEL_1, FALSE);
 
   /* configure break and dead-time settings */
@@ -69,22 +72,55 @@ void fan_ss6285l_init()
   tmr_brkdt_config(TMR1, &tmr_brkdt_struct);
 
   tmr_output_enable(TMR1, TRUE);
-
   tmr_counter_enable(TMR1, TRUE);
 	
 	fan_set_speed(0);
 }
 
-/*val代表百分比转速，范围0~100*/
-void fan_set_speed(uint16_t val)
+/* val表示挡位，范围：-5~5 */
+void fan_set_speed(int16_t val)
 {
-    uint16_t val_convert;
-
-    if(val >100)//val值出错
+    if(val > 0) //前进加停止
     {
-        return ;
+        //FI为PWM，BI为低电平
+        tmr_channel_enable(TMR1, TMR_SELECT_CHANNEL_1, TRUE);
+        tmr_channel_enable(TMR1, TMR_SELECT_CHANNEL_1C, FALSE);
+        tmr_channel_value_set(TMR1, TMR_SELECT_CHANNEL_1, fan_speed_grade[val - 1]);
+        fan_mode = 0;
     }
-
-    tmr_channel_enable(TMR1, TMR_SELECT_CHANNEL_1C, FALSE); //使得BI为低电平，只用前进和停止
-    tmr_channel_value_set(TMR1, TMR_SELECT_CHANNEL_1, val); //设置PWM的占空比
+    else if(val < 0) //后退加停止
+    {
+        //FI为低电平，BI为PWM
+        tmr_channel_enable(TMR1, TMR_SELECT_CHANNEL_1, FALSE);
+        tmr_channel_enable(TMR1, TMR_SELECT_CHANNEL_1C, TRUE);
+        tmr_channel_value_set(TMR1, TMR_SELECT_CHANNEL_1, fan_speed_grade[-val - 1]);
+        fan_mode = 1;
+    }else //停止
+    {
+        if(fan_mode == 0)
+        {
+          tmr_channel_enable(TMR1, TMR_SELECT_CHANNEL_1, TRUE);
+          tmr_channel_enable(TMR1, TMR_SELECT_CHANNEL_1C, FALSE);
+          tmr_channel_value_set(TMR1, TMR_SELECT_CHANNEL_1, 0);
+        }else{
+          tmr_channel_enable(TMR1, TMR_SELECT_CHANNEL_1, FALSE);
+          tmr_channel_enable(TMR1, TMR_SELECT_CHANNEL_1C, TRUE);
+          tmr_channel_value_set(TMR1, TMR_SELECT_CHANNEL_1, 0);
+        }
+    }
 }
+
+/* NOTE:
+    1、AT32的TIMER1只开启一个通道时，要把这个通道看成没有互补通道的存在，也就是说
+      tmr_channel_enable(TMR1, TMR_SELECT_CHANNEL_1, FALSE);
+      tmr_channel_enable(TMR1, TMR_SELECT_CHANNEL_1C, TRUE);
+      tmr_channel_value_set(TMR1, TMR_SELECT_CHANNEL_1, fan_speed_grade[-val - 1]);
+    在上述代码中设置占空比时要写成
+      tmr_channel_value_set(TMR1, TMR_SELECT_CHANNEL_1, fan_speed_grade[-val - 1]);
+    而不是
+      tmr_channel_value_set(TMR1, TMR_SELECT_CHANNEL_1C, fan_speed_grade[-val - 1]);
+    另外也要注意开启两个通道和开启单通道时tmr_output_struct.occ_polarity和tmr_output_struct.oc_polarity的设置
+    建议更改不同的参数并用逻辑分析仪观察输出波形
+
+    2、失能通道时，输出会变成低电平
+*/

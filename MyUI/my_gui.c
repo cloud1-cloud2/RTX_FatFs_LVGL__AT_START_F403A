@@ -61,7 +61,7 @@ lv_obj_t * gamepad_btn_down;
 lv_obj_t * gamepad_btn_left;
 lv_obj_t * gamepad_btn_right;
 
-uint32_t fan_speed;
+int16_t fan_speed;
 float temperature;
 float humidity;
 float voltage;
@@ -349,7 +349,7 @@ static void fan_slider_event_cb(lv_event_t * e)
 {
     fan_speed = lv_slider_get_value(lv_event_get_target_obj(e));
     fan_set_speed(fan_speed);
-    lv_label_set_text_fmt(label_fan_speed_value, "%d%%", fan_speed);
+    lv_label_set_text_fmt(label_fan_speed_value, "%d", fan_speed);
 }
 
 static void fan_btn_back_event_cb(lv_event_t * e)
@@ -378,7 +378,7 @@ void fan_ui(void)
     lv_obj_set_style_radius(slider_fan_speed, 3, LV_PART_KNOB);
     lv_obj_set_style_bg_color(slider_fan_speed, lv_color_hex(0xFFFFFF), LV_PART_KNOB);
     lv_obj_set_style_bg_opa(slider_fan_speed, LV_OPA_COVER, LV_PART_KNOB);
-    lv_slider_set_range(slider_fan_speed, 0, 100);
+    lv_slider_set_range(slider_fan_speed, -5, 5);
     lv_slider_set_value(slider_fan_speed, fan_speed, LV_ANIM_OFF);
     lv_obj_add_event_cb(slider_fan_speed, fan_slider_event_cb, LV_EVENT_VALUE_CHANGED, NULL);
 
@@ -387,7 +387,7 @@ void fan_ui(void)
     lv_obj_align_to(label_speed, slider_fan_speed, LV_ALIGN_OUT_TOP_MID, 0, -5);
 
     label_fan_speed_value = lv_label_create(scr_fan);
-    lv_label_set_text_fmt(label_fan_speed_value, "%d%%", fan_speed);
+    lv_label_set_text_fmt(label_fan_speed_value, "%d", fan_speed);
     lv_obj_align(label_fan_speed_value, LV_ALIGN_TOP_LEFT, 3, 3);
 
     btn_fan_back = lv_button_create(scr_fan);
