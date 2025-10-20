@@ -56,10 +56,10 @@
 /* This option switches f_forward(). (0:Disable or 1:Enable) */
 
 
-#define FF_USE_STRFUNC	0
-#define FF_PRINT_LLI	0
-#define FF_PRINT_FLOAT	0
-#define FF_STRF_ENCODE	0
+#define FF_USE_STRFUNC	1
+#define FF_PRINT_LLI	1
+#define FF_PRINT_FLOAT	1
+#define FF_STRF_ENCODE	3
 /* FF_USE_STRFUNC switches string API functions, f_gets(), f_putc(), f_puts() and
 /  f_printf().
 /
@@ -113,7 +113,7 @@
 */
 
 
-#define FF_USE_LFN		0
+#define FF_USE_LFN		3
 #define FF_MAX_LFN		255
 /* The FF_USE_LFN switches the support for LFN (long file name).
 /
@@ -133,7 +133,7 @@
 /  ff_memfree() exemplified in ffsystem.c, need to be added to the project. */
 
 
-#define FF_LFN_UNICODE	0
+#define FF_LFN_UNICODE	2
 /* This option switches the character encoding on the API when LFN is enabled.
 /
 /   0: ANSI/OEM in current CP (TCHAR = char)
@@ -145,8 +145,8 @@
 /  When LFN is not enabled, this option has no effect. */
 
 
-#define FF_LFN_BUF		1020
-#define FF_SFN_BUF		12
+#define FF_LFN_BUF		1024
+#define FF_SFN_BUF		20
 /* This set of options defines size of file name members in the FILINFO structure
 /  which is used to read out directory items. These values should be suffcient for
 /  the file names to read. The maximum possible length of the read file name depends
@@ -280,7 +280,7 @@
 */
 
 
-#define FF_FS_LOCK		0
+#define FF_FS_LOCK	1
 /* The option FF_FS_LOCK switches file lock function to control duplicated file open
 /  and illegal operation to open objects. This option must be 0 when FF_FS_READONLY
 /  is 1.
@@ -293,7 +293,7 @@
 
 
 #define FF_FS_REENTRANT	1
-#define FF_FS_TIMEOUT	1500
+#define FF_FS_TIMEOUT	3000
 /* The option FF_FS_REENTRANT switches the re-entrancy (thread safe) of the FatFs
 /  module itself. Note that regardless of this option, file access to different
 /  volume is always re-entrant and volume control functions, f_mount(), f_mkfs()

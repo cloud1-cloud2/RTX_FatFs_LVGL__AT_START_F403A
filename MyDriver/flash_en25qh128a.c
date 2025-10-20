@@ -3,68 +3,68 @@
 void flash_en25qh_init()
 {
 	gpio_init_type gpio_init_struct;
-  spi_init_type spi_init_struct;
+    spi_init_type spi_init_struct;
 
 	crm_periph_clock_enable(CRM_GPIOA_PERIPH_CLOCK, TRUE);
 	crm_periph_clock_enable(CRM_GPIOC_PERIPH_CLOCK, TRUE);
 	crm_periph_clock_enable(CRM_SPI1_PERIPH_CLOCK, TRUE);
 	
-  gpio_default_para_init(&gpio_init_struct);
-  spi_default_para_init(&spi_init_struct);
+    gpio_default_para_init(&gpio_init_struct);
+    spi_default_para_init(&spi_init_struct);
 
 	gpio_bits_set(GPIOA, GPIO_PINS_4);
 	gpio_bits_set(GPIOC, GPIO_PINS_4 | GPIO_PINS_5);
 	
 	gpio_init_struct.gpio_drive_strength = GPIO_DRIVE_STRENGTH_MODERATE;
-  gpio_init_struct.gpio_out_type = GPIO_OUTPUT_PUSH_PULL;
-  gpio_init_struct.gpio_mode = GPIO_MODE_OUTPUT;
-  gpio_init_struct.gpio_pins = GPIO_PINS_4;
-  gpio_init_struct.gpio_pull = GPIO_PULL_NONE;
-  gpio_init(GPIOA, &gpio_init_struct);
+    gpio_init_struct.gpio_out_type = GPIO_OUTPUT_PUSH_PULL;
+    gpio_init_struct.gpio_mode = GPIO_MODE_OUTPUT;
+    gpio_init_struct.gpio_pins = GPIO_PINS_4;
+    gpio_init_struct.gpio_pull = GPIO_PULL_NONE;
+    gpio_init(GPIOA, &gpio_init_struct);
 	
 	gpio_init_struct.gpio_drive_strength = GPIO_DRIVE_STRENGTH_MODERATE;
-  gpio_init_struct.gpio_out_type = GPIO_OUTPUT_PUSH_PULL;
-  gpio_init_struct.gpio_mode = GPIO_MODE_OUTPUT;
-  gpio_init_struct.gpio_pins = GPIO_PINS_4 | GPIO_PINS_5;
-  gpio_init_struct.gpio_pull = GPIO_PULL_NONE;
-  gpio_init(GPIOC, &gpio_init_struct);
+    gpio_init_struct.gpio_out_type = GPIO_OUTPUT_PUSH_PULL;
+    gpio_init_struct.gpio_mode = GPIO_MODE_OUTPUT;
+    gpio_init_struct.gpio_pins = GPIO_PINS_4 | GPIO_PINS_5;
+    gpio_init_struct.gpio_pull = GPIO_PULL_NONE;
+    gpio_init(GPIOC, &gpio_init_struct);
 	
-  /* configure the SCK pin */
-  gpio_init_struct.gpio_drive_strength = GPIO_DRIVE_STRENGTH_MODERATE;
-  gpio_init_struct.gpio_out_type = GPIO_OUTPUT_PUSH_PULL;
-  gpio_init_struct.gpio_mode = GPIO_MODE_MUX;
-  gpio_init_struct.gpio_pins = GPIO_PINS_5;
-  gpio_init_struct.gpio_pull = GPIO_PULL_NONE;
-  gpio_init(GPIOA, &gpio_init_struct);
+    /* configure the SCK pin */
+    gpio_init_struct.gpio_drive_strength = GPIO_DRIVE_STRENGTH_MODERATE;
+    gpio_init_struct.gpio_out_type = GPIO_OUTPUT_PUSH_PULL;
+    gpio_init_struct.gpio_mode = GPIO_MODE_MUX;
+    gpio_init_struct.gpio_pins = GPIO_PINS_5;
+    gpio_init_struct.gpio_pull = GPIO_PULL_NONE;
+    gpio_init(GPIOA, &gpio_init_struct);
 
-  /* configure the MISO pin */
-  gpio_init_struct.gpio_drive_strength = GPIO_DRIVE_STRENGTH_MODERATE;
-  gpio_init_struct.gpio_out_type  = GPIO_OUTPUT_PUSH_PULL;
-  gpio_init_struct.gpio_mode = GPIO_MODE_INPUT;
-  gpio_init_struct.gpio_pins = GPIO_PINS_6;
-  gpio_init_struct.gpio_pull = GPIO_PULL_NONE;
-  gpio_init(GPIOA, &gpio_init_struct);
+    /* configure the MISO pin */
+    gpio_init_struct.gpio_drive_strength = GPIO_DRIVE_STRENGTH_MODERATE;
+    gpio_init_struct.gpio_out_type  = GPIO_OUTPUT_PUSH_PULL;
+    gpio_init_struct.gpio_mode = GPIO_MODE_INPUT;
+    gpio_init_struct.gpio_pins = GPIO_PINS_6;
+    gpio_init_struct.gpio_pull = GPIO_PULL_NONE;
+    gpio_init(GPIOA, &gpio_init_struct);
 
-  /* configure the MOSI pin */
-  gpio_init_struct.gpio_drive_strength = GPIO_DRIVE_STRENGTH_MODERATE;
-  gpio_init_struct.gpio_out_type = GPIO_OUTPUT_PUSH_PULL;
-  gpio_init_struct.gpio_mode = GPIO_MODE_MUX;
-  gpio_init_struct.gpio_pins = GPIO_PINS_7;
-  gpio_init_struct.gpio_pull = GPIO_PULL_NONE;
-  gpio_init(GPIOA, &gpio_init_struct);
+    /* configure the MOSI pin */
+    gpio_init_struct.gpio_drive_strength = GPIO_DRIVE_STRENGTH_MODERATE;
+    gpio_init_struct.gpio_out_type = GPIO_OUTPUT_PUSH_PULL;
+    gpio_init_struct.gpio_mode = GPIO_MODE_MUX;
+    gpio_init_struct.gpio_pins = GPIO_PINS_7;
+    gpio_init_struct.gpio_pull = GPIO_PULL_NONE;
+    gpio_init(GPIOA, &gpio_init_struct);
 
-  /* configure param */
-  spi_init_struct.transmission_mode = SPI_TRANSMIT_FULL_DUPLEX;
-  spi_init_struct.master_slave_mode = SPI_MODE_MASTER;
-  spi_init_struct.frame_bit_num = SPI_FRAME_8BIT;
-  spi_init_struct.first_bit_transmission = SPI_FIRST_BIT_MSB;
-  spi_init_struct.mclk_freq_division = SPI_MCLK_DIV_32;
-  spi_init_struct.clock_polarity = SPI_CLOCK_POLARITY_LOW;
-  spi_init_struct.clock_phase = SPI_CLOCK_PHASE_1EDGE;
-  spi_init_struct.cs_mode_selection = SPI_CS_SOFTWARE_MODE;
-  spi_init(SPI1, &spi_init_struct);
+    /* configure param */
+    spi_init_struct.transmission_mode = SPI_TRANSMIT_FULL_DUPLEX;
+    spi_init_struct.master_slave_mode = SPI_MODE_MASTER;
+    spi_init_struct.frame_bit_num = SPI_FRAME_8BIT;
+    spi_init_struct.first_bit_transmission = SPI_FIRST_BIT_MSB;
+    spi_init_struct.mclk_freq_division = SPI_MCLK_DIV_32;
+    spi_init_struct.clock_polarity = SPI_CLOCK_POLARITY_LOW;
+    spi_init_struct.clock_phase = SPI_CLOCK_PHASE_1EDGE;
+    spi_init_struct.cs_mode_selection = SPI_CS_SOFTWARE_MODE;
+    spi_init(SPI1, &spi_init_struct);
 
-  spi_enable(SPI1, TRUE);
+    spi_enable(SPI1, TRUE);
 }
 
 /**
@@ -151,7 +151,7 @@ bool en25qh_write_enable(void)
     spi_i2s_data_receive(EN25QH_SPI);   //dummy read to clear the flag
     while(spi_i2s_flag_get(EN25QH_SPI, SPI_I2S_BF_FLAG) == SET);
 
-    EN25QH_CS_H; // 禁用片选
+    EN25QH_CS_H; // 失能片选
 
     return true;
 }
@@ -184,7 +184,7 @@ bool en25qh_erase_sector(uint32_t addr)
         while(spi_i2s_flag_get(EN25QH_SPI, SPI_I2S_BF_FLAG) == SET);
     }
 
-    EN25QH_CS_H; // 禁用片选
+    EN25QH_CS_H; // 失能片选
 
     en25qh_wait_busy(); // 等待擦除完成
 
@@ -227,7 +227,7 @@ bool en25qh_write_page(uint32_t addr, const uint8_t *buf, uint16_t len)
         while(spi_i2s_flag_get(EN25QH_SPI, SPI_I2S_BF_FLAG) == SET);
     }
 
-    EN25QH_CS_H; // 禁用片选
+    EN25QH_CS_H; // 失能片选
 
     en25qh_wait_busy(); // 等待写入完成
 
@@ -248,7 +248,7 @@ bool en25qh_erase_chip(void)
     spi_i2s_data_receive(EN25QH_SPI);   //dummy read to clear the flag
     while(spi_i2s_flag_get(EN25QH_SPI, SPI_I2S_BF_FLAG) == SET);
 
-    EN25QH_CS_H; // 禁用片选
+    EN25QH_CS_H; // 失能片选
 
     en25qh_wait_busy(); // 等待擦除完成
 
@@ -292,7 +292,7 @@ bool en25qh_read_data(uint32_t addr, uint8_t *buf, uint32_t len)
         while(spi_i2s_flag_get(EN25QH_SPI, SPI_I2S_BF_FLAG) == SET);
     }
 
-    EN25QH_CS_H; // 禁用片选
+    EN25QH_CS_H; // 失能片选
 
     return true;
 }

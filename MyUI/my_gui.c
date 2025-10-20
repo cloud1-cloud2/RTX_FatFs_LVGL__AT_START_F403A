@@ -445,7 +445,7 @@ static void file_file_explorer_event_cb(lv_event_t * e)
         sel_fn = lv_file_explorer_get_selected_file_name(file_explorer);
         snprintf(full_path, sizeof(full_path), "%s%s", cur_path, sel_fn);
 
-        if(strstr(sel_fn, ".TXT") != NULL) { //如果选中的是以.TXT结尾的文件
+        if(strstr(sel_fn, ".txt") != NULL) { //如果选中的是以.TXT结尾的文件
             txt_popup_ui(); //打开txt文件弹窗
            
             //读取文件内容并更新到文本区域

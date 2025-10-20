@@ -4,35 +4,64 @@
 
 #include "ff.h"
 
-
 #if FF_USE_LFN == 3	/* Use dynamic memory allocation */
+#include "stdio.h"
+#include "cmsis_os2.h"
 
-/*------------------------------------------------------------------------*/
-/* Allocate/Free a Memory Block                                           */
-/*------------------------------------------------------------------------*/
+// 为FatFS创建专用的内存池
+#define FATFS_MEM_BLOCK_SIZE  512
+#define FATFS_MEM_BLOCK_COUNT 10
 
-#include <stdlib.h>		/* with POSIX API */
+static osMemoryPoolId_t fatfs_mempool = NULL;
 
-
-void* ff_memalloc (	/* Returns pointer to the allocated memory block (null if not enough core) */
-	UINT msize		/* Number of bytes to allocate */
-)
+void* ff_memalloc(UINT msize)
 {
-	return malloc((size_t)msize);	/* Allocate a new memory block */
+    //printf("[DEBUG] ff_memalloc: %u bytes\n", msize);
+    
+    // 第一次使用时初始化内存池
+    if (fatfs_mempool == NULL) {
+        osMemoryPoolAttr_t mempool_attr = {
+            .name = "FatFS_MemPool",
+            .attr_bits = 0,
+            .cb_mem = NULL,
+            .cb_size = 0,
+            .mp_mem = NULL,
+            .mp_size = 0
+        };
+        fatfs_mempool = osMemoryPoolNew(FATFS_MEM_BLOCK_COUNT, 
+                                       FATFS_MEM_BLOCK_SIZE, 
+                                       &mempool_attr);
+        
+        if (fatfs_mempool == NULL) {
+            printf("[ERROR] Failed to create FatFS memory pool\n");
+            return NULL;
+        }
+    }
+    
+    // 检查请求大小是否合适
+    if (msize > FATFS_MEM_BLOCK_SIZE) {
+        printf("[ERROR] Requested size %u exceeds block size %u\n", 
+               msize, FATFS_MEM_BLOCK_SIZE);
+        return NULL;
+    }
+    
+    // 从内存池分配
+    void* ptr = osMemoryPoolAlloc(fatfs_mempool, 0); // 0表示无限等待
+    //printf("[DEBUG] Allocation result: %p\n", ptr);
+    
+    return ptr;
 }
 
-
-void ff_memfree (
-	void* mblock	/* Pointer to the memory block to free (no effect if null) */
-)
+void ff_memfree(void* mblock)
 {
-	free(mblock);	/* Free the memory block */
+    //printf("[DEBUG] ff_memfree: %p\n", mblock);
+    
+    if (mblock != NULL && fatfs_mempool != NULL) {
+        osMemoryPoolFree(fatfs_mempool, mblock);
+    }
 }
 
 #endif
-
-
-
 
 #if FF_FS_REENTRANT	/* Mutal exclusion */
 /*------------------------------------------------------------------------*/
@@ -82,7 +111,7 @@ static osMutexId_t Mutex[FF_VOLUMES + 1];	/* Table of mutex ID */
 
 const osMutexAttr_t Fatfs016_Mutex_attr = {
   NULL,     // human readable mutex name
-  osMutexPrioInherit,    // attr_bits
+  osMutexPrioInherit,     // attr_bits
   NULL,                // memory for control block   
   0U                   // size for control block
 };	

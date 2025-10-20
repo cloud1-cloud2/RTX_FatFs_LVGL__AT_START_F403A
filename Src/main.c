@@ -23,12 +23,13 @@
 #include "my_gui.h"
 
 
-/******************* extern func *****************************/
+/*=============== 函数声明 ==============*/
+
 void app_main (void *argument);
 void app_lvgl(void *argument);
 
 
-/******************* main func ****************************/
+/*=============== main函数 ==============*/
 
 int main (void) 
 {
@@ -45,24 +46,26 @@ int main (void)
 	usbdevice_init();
 	voltage_adc_init();
 	
-	const osThreadAttr_t thread_main_attr = {
-		.stack_size = 13000                           // Create the thread stack with a size of 16384 bytes
+	osThreadAttr_t thread_main_attr = {
+		.stack_size = 20*1024 
 	};
 	
-  osKernelInitialize();                 // Initialize CMSIS-RTOS
-  osThreadNew(app_main, NULL, &thread_main_attr);    // Create application main thread
-  osKernelStart();                      // Start thread execution
+  osKernelInitialize();                 
+  osThreadNew(app_main, NULL, &thread_main_attr);  
+  osKernelStart(); 
 
   while(1);
 }
 
-/************************** app func ****************************/
+/*=============== 线程函数 ==============*/
+
 void app_main (void *argument)
 {
+	setvbuf(stdout, NULL, _IONBF, 0); // 关闭printf缓冲区模式
 	file_system_init();
 	
-	const osThreadAttr_t thread_lvgl_attr = {
-		.stack_size = 20000                           // Create the thread stack with a size of 16384 bytes
+	osThreadAttr_t thread_lvgl_attr = {
+		.stack_size = 20*1024 
 	};
 	osThreadNew(app_lvgl, NULL, &thread_lvgl_attr);
 	
@@ -75,7 +78,7 @@ void app_main (void *argument)
 void app_lvgl(void *argument)
 {
 	lv_init();
-	lv_tick_set_cb(osKernelGetTickCount);  //滴答中断频率设为1000, tick数就是ms数
+	lv_tick_set_cb(osKernelGetTickCount);
 	lv_port_disp_init();
 	lv_port_indev_init();
 	lvgl_ui();
@@ -84,6 +87,6 @@ void app_lvgl(void *argument)
 	{
 		uint32_t time_till_next = lv_timer_handler();
   	if(time_till_next == LV_NO_TIMER_READY) time_till_next = LV_DEF_REFR_PERIOD; /*handle LV_NO_TIMER_READY. Another option is to `sleep` for longer*/
-  	osDelay(time_till_next); /* delay to avoid unnecessary polling */
+  	osDelay(time_till_next);
 	}
 }
