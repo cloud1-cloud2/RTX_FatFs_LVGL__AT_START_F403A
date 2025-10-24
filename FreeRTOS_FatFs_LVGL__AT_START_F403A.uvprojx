@@ -88,7 +88,7 @@
             <nStopA1X>0</nStopA1X>
             <nStopA2X>0</nStopA2X>
           </AfterMake>
-          <SelectedForBatchBuild>0</SelectedForBatchBuild>
+          <SelectedForBatchBuild>1</SelectedForBatchBuild>
           <SVCSIdString></SVCSIdString>
         </TargetCommonOption>
         <CommonProperty>
@@ -328,7 +328,7 @@
             <uC99>1</uC99>
             <uGnu>1</uGnu>
             <useXO>0</useXO>
-            <v6Lang>3</v6Lang>
+            <v6Lang>5</v6Lang>
             <v6LangP>3</v6LangP>
             <vShortEn>1</vShortEn>
             <vShortWch>1</vShortWch>
@@ -339,7 +339,7 @@
               <MiscControls></MiscControls>
               <Define></Define>
               <Undefine></Undefine>
-              <IncludePath>.\MyDriver;.\FatFs;.\MyUI;.\USBDevice</IncludePath>
+              <IncludePath>.\Inc;.\MyDriver;.\FatFs;.\MyUI;.\USBDevice</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -381,6 +381,21 @@
       </TargetOption>
       <Groups>
         <Group>
+          <GroupName>Inc</GroupName>
+          <Files>
+            <File>
+              <FileName>lv_port_disp.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\Inc\lv_port_disp.h</FilePath>
+            </File>
+            <File>
+              <FileName>lv_port_indev.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\Inc\lv_port_indev.h</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
           <GroupName>Src</GroupName>
           <Files>
             <File>
@@ -392,6 +407,16 @@
               <FileName>stdout_user.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\Src\stdout_user.c</FilePath>
+            </File>
+            <File>
+              <FileName>lv_port_disp.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Src\lv_port_disp.c</FilePath>
+            </File>
+            <File>
+              <FileName>lv_port_indev.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Src\lv_port_indev.c</FilePath>
             </File>
           </Files>
         </Group>
@@ -542,6 +567,9 @@
         <Group>
           <GroupName>::LVGL</GroupName>
         </Group>
+        <Group>
+          <GroupName>::RTOS</GroupName>
+        </Group>
       </Groups>
     </Target>
   </Targets>
@@ -604,8 +632,38 @@
           <targetInfo name="AT32F403A_Debug"/>
         </targetInfos>
       </component>
-      <component Capiversion="2.3.0" Cclass="CMSIS" Cgroup="RTOS2" Csub="Keil RTX5" Cvariant="Source" Cvendor="ARM" Cversion="5.9.0" condition="RTX5" ymlID="CMSIS:RTOS2:Keil RTX5&amp;Source">
-        <package name="CMSIS-RTX" schemaVersion="1.7.36" url="https://www.keil.com/pack/" vendor="ARM" version="5.9.0"/>
+      <component Capiversion="2.3.0" Cclass="CMSIS" Cgroup="RTOS2" Csub="FreeRTOS" Cvariant="Cortex-M" Cvendor="ARM" Cversion="11.2.0" condition="CMSIS RTOS2 FreeRTOS CortexM" ymlID="CMSIS:RTOS2:FreeRTOS&amp;Cortex-M">
+        <package name="CMSIS-FreeRTOS" schemaVersion="1.7.40" url="https://www.keil.com/pack/" vendor="ARM" version="11.2.0"/>
+        <targetInfos>
+          <targetInfo name="AT32F403A_Debug"/>
+        </targetInfos>
+      </component>
+      <component Cbundle="FreeRTOS" Cclass="RTOS" Cgroup="Config" Cvariant="CMSIS RTOS2" Cvendor="ARM" Cversion="11.2.0" condition="FreeRTOS Config CMSIS RTOS2" ymlID="RTOS&amp;FreeRTOS:Config&amp;CMSIS RTOS2">
+        <package name="CMSIS-FreeRTOS" schemaVersion="1.7.40" url="https://www.keil.com/pack/" vendor="ARM" version="11.2.0"/>
+        <targetInfos>
+          <targetInfo name="AT32F403A_Debug"/>
+        </targetInfos>
+      </component>
+      <component Cbundle="FreeRTOS" Cclass="RTOS" Cgroup="Core" Cvariant="Cortex-M" Cvendor="ARM" Cversion="11.2.0" condition="FreeRTOS Core CM" ymlID="RTOS&amp;FreeRTOS:Core&amp;Cortex-M">
+        <package name="CMSIS-FreeRTOS" schemaVersion="1.7.40" url="https://www.keil.com/pack/" vendor="ARM" version="11.2.0"/>
+        <targetInfos>
+          <targetInfo name="AT32F403A_Debug"/>
+        </targetInfos>
+      </component>
+      <component Cbundle="FreeRTOS" Cclass="RTOS" Cgroup="Event Groups" Cvendor="ARM" Cversion="11.2.0" condition="FreeRTOS Event Groups" ymlID="RTOS&amp;FreeRTOS:Event Groups">
+        <package name="CMSIS-FreeRTOS" schemaVersion="1.7.40" url="https://www.keil.com/pack/" vendor="ARM" version="11.2.0"/>
+        <targetInfos>
+          <targetInfo name="AT32F403A_Debug"/>
+        </targetInfos>
+      </component>
+      <component Cbundle="FreeRTOS" Cclass="RTOS" Cgroup="Heap" Cvariant="Heap_4" Cvendor="ARM" Cversion="11.2.0" condition="FreeRTOS Heap" ymlID="RTOS&amp;FreeRTOS:Heap&amp;Heap_4">
+        <package name="CMSIS-FreeRTOS" schemaVersion="1.7.40" url="https://www.keil.com/pack/" vendor="ARM" version="11.2.0"/>
+        <targetInfos>
+          <targetInfo name="AT32F403A_Debug"/>
+        </targetInfos>
+      </component>
+      <component Cbundle="FreeRTOS" Cclass="RTOS" Cgroup="Timers" Cvendor="ARM" Cversion="11.2.0" condition="FreeRTOS Timers" ymlID="RTOS&amp;FreeRTOS:Timers">
+        <package name="CMSIS-FreeRTOS" schemaVersion="1.7.40" url="https://www.keil.com/pack/" vendor="ARM" version="11.2.0"/>
         <targetInfos>
           <targetInfo name="AT32F403A_Debug"/>
         </targetInfos>
@@ -742,7 +800,7 @@
           <targetInfo name="AT32F403A_Debug"/>
         </targetInfos>
       </component>
-      <component Cbundle="LVGL9" Cclass="LVGL" Cgroup="OS Abstraction Layer" Cvariant="CMSIS-RTOS2" Cvendor="LVGL" Cversion="9.3.0" condition="LVGL-Essential" ymlID="LVGL&amp;LVGL9:OS Abstraction Layer&amp;CMSIS-RTOS2">
+      <component Cbundle="LVGL9" Cclass="LVGL" Cgroup="OS Abstraction Layer" Cvariant="FreeRTOS" Cvendor="LVGL" Cversion="9.3.0" condition="LVGL-Essential" ymlID="LVGL&amp;LVGL9:OS Abstraction Layer&amp;FreeRTOS">
         <package name="lvgl" schemaVersion="1.7.37" url="https://raw.githubusercontent.com/lvgl/lvgl/master/env_support/cmsis-pack/" vendor="LVGL" version="9.3.0"/>
         <targetInfos>
           <targetInfo name="AT32F403A_Debug"/>
@@ -769,20 +827,16 @@
         <targetInfos/>
       </file>
       <file attr="config" category="source" name="Config\RTX_Config.c" version="5.2.0">
-        <instance index="0">RTE\CMSIS\RTX_Config.c</instance>
+        <instance index="0" removed="1">RTE\CMSIS\RTX_Config.c</instance>
         <component Capiversion="2.3.0" Cclass="CMSIS" Cgroup="RTOS2" Csub="Keil RTX5" Cvariant="Source" Cvendor="ARM" Cversion="5.9.0" condition="RTX5"/>
         <package name="CMSIS-RTX" schemaVersion="1.7.36" url="https://www.keil.com/pack/" vendor="ARM" version="5.9.0"/>
-        <targetInfos>
-          <targetInfo name="AT32F403A_Debug"/>
-        </targetInfos>
+        <targetInfos/>
       </file>
       <file attr="config" category="header" name="Config\RTX_Config.h" version="5.6.0">
-        <instance index="0">RTE\CMSIS\RTX_Config.h</instance>
+        <instance index="0" removed="1">RTE\CMSIS\RTX_Config.h</instance>
         <component Capiversion="2.3.0" Cclass="CMSIS" Cgroup="RTOS2" Csub="Keil RTX5" Cvariant="Source" Cvendor="ARM" Cversion="5.9.0" condition="RTX5"/>
         <package name="CMSIS-RTX" schemaVersion="1.7.36" url="https://www.keil.com/pack/" vendor="ARM" version="5.9.0"/>
-        <targetInfos>
-          <targetInfo name="AT32F403A_Debug"/>
-        </targetInfos>
+        <targetInfos/>
       </file>
       <file attr="config" category="source" name="Device\Firmware\Peripherals\src\at32f403a_407_acc.c" version="2.0.0">
         <instance index="0">RTE\Device\-AT32F403AVGT7\at32f403a_407_acc.c</instance>
@@ -991,9 +1045,35 @@
         </targetInfos>
       </file>
       <file attr="config" category="header" name="CMSIS\RTOS2\FreeRTOS\Config\FreeRTOSConfig.h" version="10.7.0">
-        <instance index="0" removed="1">RTE\RTOS\FreeRTOSConfig.h</instance>
+        <instance index="0">RTE\RTOS\FreeRTOSConfig.h</instance>
         <component Cbundle="FreeRTOS" Cclass="RTOS" Cgroup="Config" Cvariant="CMSIS RTOS2" Cvendor="ARM" Cversion="11.2.0" condition="FreeRTOS Config CMSIS RTOS2"/>
         <package name="CMSIS-FreeRTOS" schemaVersion="1.7.40" url="https://www.keil.com/pack/" vendor="ARM" version="11.2.0"/>
+        <targetInfos>
+          <targetInfo name="AT32F403A_Debug"/>
+        </targetInfos>
+      </file>
+      <file attr="config" category="header" name="Components\USB\Config\USBD_Config.h" version="8.0.0">
+        <instance index="0" removed="1">RTE\USB\USBD_Config_0.h</instance>
+        <component Cbundle="MDK" Cclass="USB" Cgroup="Device" Cvendor="Keil" Cversion="8.0.0" condition="USB Core and Device Driver and Class Instance" maxInstances="4"/>
+        <package name="MDK-Middleware" schemaVersion="1.7.36" url="https://www.keil.com/pack/" vendor="Keil" version="8.1.0"/>
+        <targetInfos/>
+      </file>
+      <file attr="config" category="header" name="Components\USB\Config\USBD_Config_HID.h" version="5.1.1">
+        <instance index="0" removed="1">RTE\USB\USBD_Config_HID_0.h</instance>
+        <component Cbundle="MDK" Cclass="USB" Cgroup="Device" Csub="HID" Cvendor="Keil" Cversion="8.0.0" condition="USB Core and Device Instance and Device Driver" maxInstances="8"/>
+        <package name="MDK-Middleware" schemaVersion="1.7.36" url="https://www.keil.com/pack/" vendor="Keil" version="8.1.0"/>
+        <targetInfos/>
+      </file>
+      <file attr="config" category="header" name="Components\USB\Config\USBD_Config_MSC.h" version="5.2.1">
+        <instance index="0" removed="1">RTE\USB\USBD_Config_MSC_0.h</instance>
+        <component Cbundle="MDK" Cclass="USB" Cgroup="Device" Csub="MSC" Cvendor="Keil" Cversion="8.0.0" condition="USB Core and Device Instance and Device Driver" maxInstances="4"/>
+        <package name="MDK-Middleware" schemaVersion="1.7.36" url="https://www.keil.com/pack/" vendor="Keil" version="8.1.0"/>
+        <targetInfos/>
+      </file>
+      <file attr="config" category="header" name="Components\USB\Config\USB_Debug.h" version="8.0.0">
+        <instance index="0" removed="1">RTE\USB\USB_Debug.h</instance>
+        <component Cbundle="MDK" Cclass="USB" Cgroup="CORE" Cvendor="Keil" Cversion="8.0.0" condition="CMSIS Core with RTOS"/>
+        <package name="MDK-Middleware" schemaVersion="1.7.36" url="https://www.keil.com/pack/" vendor="Keil" version="8.1.0"/>
         <targetInfos/>
       </file>
     </files>

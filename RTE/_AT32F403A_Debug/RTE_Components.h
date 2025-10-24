@@ -24,10 +24,19 @@
 /* ARM::CMSIS-Compiler:STDOUT:Custom@1.1.0 */
 #define RTE_CMSIS_Compiler_STDOUT                /* CMSIS-Compiler STDOUT */
 #define RTE_CMSIS_Compiler_STDOUT_Custom         /* CMSIS-Compiler STDOUT: Custom */
-/* ARM::CMSIS:RTOS2:Keil RTX5&Source@5.9.0 */
+/* ARM::CMSIS:RTOS2:FreeRTOS&Cortex-M@11.2.0 */
 #define RTE_CMSIS_RTOS2                 /* CMSIS-RTOS2 */
-#define RTE_CMSIS_RTOS2_RTX5            /* CMSIS-RTOS2 Keil RTX5 */
-#define RTE_CMSIS_RTOS2_RTX5_SOURCE     /* CMSIS-RTOS2 Keil RTX5 Source */
+#define RTE_CMSIS_RTOS2_FreeRTOS        /* CMSIS-RTOS2 FreeRTOS */
+/* ARM::RTOS&FreeRTOS:Config&CMSIS RTOS2@11.2.0 */
+#define RTE_RTOS_FreeRTOS_CONFIG_RTOS2  /* RTOS FreeRTOS Config for CMSIS RTOS2 API */
+/* ARM::RTOS&FreeRTOS:Core&Cortex-M@11.2.0 */
+#define RTE_RTOS_FreeRTOS_CORE          /* RTOS FreeRTOS Core */
+/* ARM::RTOS&FreeRTOS:Event Groups@11.2.0 */
+#define RTE_RTOS_FreeRTOS_EVENTGROUPS   /* RTOS FreeRTOS Event Groups */
+/* ARM::RTOS&FreeRTOS:Heap&Heap_4@11.2.0 */
+#define RTE_RTOS_FreeRTOS_HEAP_4        /* RTOS FreeRTOS Heap 4 */
+/* ARM::RTOS&FreeRTOS:Timers@11.2.0 */
+#define RTE_RTOS_FreeRTOS_TIMERS        /* RTOS FreeRTOS Timers */
 /* ArteryTek::Device:at32f403a_407_firmware_library:acc@2.0.0 */
 #define RTE_DEVICE_STDPERIPHERALS_ACC
 /* ArteryTek::Device:at32f403a_407_firmware_library:adc@2.0.0 */
@@ -71,8 +80,8 @@
 /* LVGL::LVGL&LVGL9:Libraries and Others:Lib Filesystem&FATFS@9.3.0 */
 /*! \brief enable FATFS support */
 #define LV_USE_FS_FATFS         1
-/* LVGL::LVGL&LVGL9:OS Abstraction Layer&CMSIS-RTOS2@9.3.0 */
-#define LV_USE_OS   LV_OS_CMSIS_RTOS2
+/* LVGL::LVGL&LVGL9:OS Abstraction Layer&FreeRTOS@9.3.0 */
+#define LV_USE_OS   LV_OS_FREERTOS
 
 
 #endif /* RTE_COMPONENTS_H */

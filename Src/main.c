@@ -18,8 +18,8 @@
 #include "voltage_adc.h"
 
 #include "lvgl.h"
-#include "lv_port_disp_template.h"
-#include "lv_port_indev_template.h"
+#include "lv_port_disp.h"
+#include "lv_port_indev.h"
 #include "my_gui.h"
 
 
