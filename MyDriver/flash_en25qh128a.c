@@ -330,3 +330,83 @@ bool en25qh_write_data(uint8_t *buf, uint32_t sector, uint32_t count) {
 
     return true;
 }
+
+/** @brief  Write data to the EN25QH128A flash memory with read-modify-write for unaligned writes.
+ * @param  addr: The starting address to write to.
+ * @param  buf: Pointer to the buffer containing the data to write.
+ * @param  len: write length
+ * @retval true if the operation is successful, false otherwise.
+ */
+ bool en25qh_write_data_2(uint32_t addr, uint8_t *buf, uint32_t len)
+ {
+    uint32_t sector_size = EN25QH_SECTOR_SIZE;
+    uint32_t page_size = EN25QH_PAGE_SIZE;
+    uint32_t current_addr = addr;
+    uint32_t bytes_remaining = len;
+    uint8_t *current_buf = buf;
+
+    // 静态缓冲区用于读-修改-写操作（避免栈溢出）
+    static uint8_t sector_buffer[EN25QH_SECTOR_SIZE];
+    
+    if (sector_size > sizeof(sector_buffer)) {
+        return false; // 缓冲区太小
+    }
+
+    while (bytes_remaining > 0) {
+        // 计算当前地址所在的扇区
+        uint32_t sector_start = current_addr - (current_addr % sector_size);
+        uint32_t sector_offset = current_addr - sector_start;
+        
+        // 计算本次写入在扇区内的长度
+        uint32_t bytes_this_sector = sector_size - sector_offset;
+        if (bytes_this_sector > bytes_remaining) {
+            bytes_this_sector = bytes_remaining;
+        }
+
+        // 方法1：如果要写入整个扇区，直接擦除并写入（最快）
+        if (sector_offset == 0 && bytes_this_sector == sector_size) {
+            if (!en25qh_erase_sector(sector_start)) {
+                return false;
+            }
+            
+            // 按页写入整个扇区
+            for (uint32_t i = 0; i < sector_size; i += page_size) {
+                uint32_t write_size = (sector_size - i) < page_size ? (sector_size - i) : page_size;
+                if (!en25qh_write_page(sector_start + i, current_buf + i, write_size)) {
+                    return false;
+                }
+            }
+        }
+        // 方法2：部分扇区写入，需要读-修改-写操作
+        else {
+            // 1. 读取整个扇区到缓冲区
+            if (!en25qh_read_data(sector_start, sector_buffer, sector_size)) {
+                return false;
+            }
+            
+            // 2. 将新数据复制到缓冲区的相应位置
+            memcpy(sector_buffer + sector_offset, current_buf, bytes_this_sector);
+            
+            // 3. 擦除整个扇区
+            if (!en25qh_erase_sector(sector_start)) {
+                return false;
+            }
+            
+            // 4. 将修改后的缓冲区写回扇区
+            for (uint32_t i = 0; i < sector_size; i += page_size) {
+                uint32_t write_size = (sector_size - i) < page_size ? (sector_size - i) : page_size;
+                if (!en25qh_write_page(sector_start + i, sector_buffer + i, write_size)) {
+                    return false;
+                }
+            }
+        }
+
+        // 更新指针和剩余字节数
+        current_addr += bytes_this_sector;
+        current_buf += bytes_this_sector;
+        bytes_remaining -= bytes_this_sector;
+    }
+
+    return true;
+ }
+ 

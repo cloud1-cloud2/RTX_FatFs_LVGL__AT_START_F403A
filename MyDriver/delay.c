@@ -10,7 +10,7 @@ volatile uint32_t ticks_count_us;
 void delay_init()
 {	
 	crm_periph_clock_enable(CRM_TMR6_PERIPH_CLOCK, TRUE);
-  wk_timebase_init();
+    wk_timebase_init();
 }
 
 /**

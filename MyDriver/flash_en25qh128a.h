@@ -5,8 +5,9 @@
 #include CMSIS_device_header
 
 #include "stdint.h"
-#include <stdbool.h>
-#include <stddef.h> // For NULL definition
+#include "stdbool.h"
+#include "stddef.h" // For NULL definition
+#include "string.h"
 
 #define EN25QH_SPI                    SPI1
 #define EN25QH_SPI_DUMMY_BYTE         0xA5
@@ -40,5 +41,6 @@ bool en25qh_write_page(uint32_t addr, const uint8_t *buf, uint16_t len);
 bool en25qh_read_data(uint32_t addr, uint8_t *buf, uint32_t len);
 bool en25qh_wait_busy(void);
 bool en25qh_write_data(uint8_t *buf, uint32_t sector, uint32_t count);
+bool en25qh_write_data_2(uint32_t addr, uint8_t *buf, uint32_t len);
 
 #endif

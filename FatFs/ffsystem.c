@@ -9,7 +9,7 @@
 #include "cmsis_os2.h"
 
 // 为FatFS创建专用的内存池
-#define FATFS_MEM_BLOCK_SIZE  512
+#define FATFS_MEM_BLOCK_SIZE  1120
 #define FATFS_MEM_BLOCK_COUNT 10
 
 static osMemoryPoolId_t fatfs_mempool = NULL;

@@ -47,14 +47,14 @@ int main (void)
 	voltage_adc_init();
 	
 	osThreadAttr_t thread_main_attr = {
-		.stack_size = 20*1024 
+		.stack_size = 5*1024 
 	};
 	
-  osKernelInitialize();                 
-  osThreadNew(app_main, NULL, &thread_main_attr);  
-  osKernelStart(); 
-
-  while(1);
+    osKernelInitialize();                 
+    osThreadNew(app_main, NULL, &thread_main_attr);  
+    osKernelStart(); 
+    
+    while(1);
 }
 
 /*=============== 线程函数 ==============*/
@@ -65,11 +65,11 @@ void app_main (void *argument)
 	file_system_init();
 	
 	osThreadAttr_t thread_lvgl_attr = {
-		.stack_size = 20*1024 
+		.stack_size = 10*1024 
 	};
 	osThreadNew(app_lvgl, NULL, &thread_lvgl_attr);
 	
-  while(1)
+    while(1)
 	{
 		osDelay(osWaitForever);
 	}
@@ -83,10 +83,10 @@ void app_lvgl(void *argument)
 	lv_port_indev_init();
 	lvgl_ui();
 
-  while(1)
+	while(1)
 	{
 		uint32_t time_till_next = lv_timer_handler();
-  	if(time_till_next == LV_NO_TIMER_READY) time_till_next = LV_DEF_REFR_PERIOD; /*handle LV_NO_TIMER_READY. Another option is to `sleep` for longer*/
-  	osDelay(time_till_next);
+		if(time_till_next == LV_NO_TIMER_READY) time_till_next = LV_DEF_REFR_PERIOD; /*handle LV_NO_TIMER_READY. Another option is to `sleep` for longer*/
+		osDelay(time_till_next);
 	}
 }

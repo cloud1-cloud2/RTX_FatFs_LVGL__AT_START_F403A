@@ -6,8 +6,8 @@
 
 #include "delay.h"
 #include "usbd_core.h"
-#include "custom_hid_class.h"
-#include "custom_hid_desc.h"
+#include "msc_custom_hid_class.h"
+#include "msc_custom_hid_desc.h"
 #include "usbd_int.h"
 
 #pragma pack(push, 1)

@@ -1,7 +1,7 @@
 /**
   **************************************************************************
-  * @file     custom_hid_desc.c
-  * @brief    usb hid device descriptor
+  * @file     msc_desc.c
+  * @brief    usb msc device descriptor
   **************************************************************************
   *                       Copyright notice & Disclaimer
   *
@@ -21,23 +21,25 @@
   *
   **************************************************************************
   */
+#include "stdio.h"
 #include "usb_std.h"
 #include "usbd_sdr.h"
 #include "usbd_core.h"
-#include "custom_hid_desc.h"
+#include "msc_custom_hid_desc.h"
 
 /** @addtogroup AT32F403A_407_middlewares_usbd_class
   * @{
   */
 
-/** @defgroup USB_custom_hid_desc
-  * @brief usb device custom_hid descriptor
+/** @defgroup USB_msc_desc
+  * @brief usb device msc descriptor
   * @{
   */
 
-/** @defgroup USB_custom_hid_desc_private_functions
+/** @defgroup USB_msc_desc_private_functions
   * @{
   */
+
 static usbd_desc_t *get_device_descriptor(void);
 static usbd_desc_t *get_device_qualifier(void);
 static usbd_desc_t *get_device_configuration(void);
@@ -52,15 +54,17 @@ static usbd_desc_t *get_device_config_string(void);
 static uint16_t usbd_unicode_convert(uint8_t *string, uint8_t *unicode_buf);
 static void usbd_int_to_unicode (uint32_t value , uint8_t *pbuf , uint8_t len);
 static void get_serial_num(void);
+
 #if defined ( __ICCARM__ ) /* iar compiler */
   #pragma data_alignment=4
 #endif
 ALIGNED_HEAD static uint8_t g_usbd_desc_buffer[256] ALIGNED_TAIL;
+static usbd_desc_t vp_desc;
 
 /**
-  * @brief  custom hid device descriptor handler structure
+  * @brief device descriptor handler structure
   */
-usbd_desc_handler custom_hid_desc_handler =
+usbd_desc_handler msc_custom_hid_desc_handler =
 {
   get_device_descriptor,
   get_device_qualifier,
@@ -86,16 +90,16 @@ ALIGNED_HEAD static uint8_t g_usbd_descriptor[USB_DEVICE_DESC_LEN] ALIGNED_TAIL 
   USB_DESCIPTOR_TYPE_DEVICE,             /* bDescriptorType */
   0x00,                                  /* bcdUSB */
   0x02,
-  0x00,                                  /* bDeviceClass */
-  0x00,                                  /* bDeviceSubClass */
-  0x00,                                  /* bDeviceProtocol */
+  0xEF,                                  /* bDeviceClass */
+  0x02,                                  /* bDeviceSubClass */
+  0x01,                                  /* bDeviceProtocol */
   USB_MAX_EP0_SIZE,                      /* bMaxPacketSize */
-  LBYTE(USBD_CUSHID_VENDOR_ID),                 /* idVendor */
-  HBYTE(USBD_CUSHID_VENDOR_ID),                 /* idVendor */
-  LBYTE(USBD_CUSHID_PRODUCT_ID),                /* idProduct */
-  HBYTE(USBD_CUSHID_PRODUCT_ID),                /* idProduct */
-  0x00,                                  /* bcdDevice rel. 2.00 */
-  0x02,
+  LBYTE(USBD_MSC_Custom_HID_VENDOR_ID),             /* idVendor */
+  HBYTE(USBD_MSC_Custom_HID_VENDOR_ID),             /* idVendor */
+  LBYTE(USBD_MSC_Custom_HID_PRODUCT_ID),            /* idProduct */
+  HBYTE(USBD_MSC_Custom_HID_PRODUCT_ID),            /* idProduct */
+  0x00,                                  /* bcdDevice rel. 1.00 */
+  0x01,
   USB_MFC_STRING,                        /* Index of manufacturer string */
   USB_PRODUCT_STRING,                    /* Index of product string */
   USB_SERIAL_STRING,                     /* Index of serial number string */
@@ -108,29 +112,77 @@ ALIGNED_HEAD static uint8_t g_usbd_descriptor[USB_DEVICE_DESC_LEN] ALIGNED_TAIL 
 #if defined ( __ICCARM__ ) /* iar compiler */
   #pragma data_alignment=4
 #endif
-ALIGNED_HEAD static uint8_t g_usbd_configuration[USBD_CUSHID_CONFIG_DESC_SIZE] ALIGNED_TAIL =
+ALIGNED_HEAD static uint8_t g_usbd_configuration[USBD_MSC_CUSTON_HID_CONFIG_DESC_SIZE] ALIGNED_TAIL =
 {
   USB_DEVICE_CFG_DESC_LEN,               /* bLength: configuration descriptor size */
   USB_DESCIPTOR_TYPE_CONFIGURATION,      /* bDescriptorType: configuration */
-  LBYTE(USBD_CUSHID_CONFIG_DESC_SIZE),          /* wTotalLength: bytes returned */
-  HBYTE(USBD_CUSHID_CONFIG_DESC_SIZE),          /* wTotalLength: bytes returned */
-  0x01,                                  /* bNumInterfaces: 1 interface */
+  LBYTE(USBD_MSC_CUSTON_HID_CONFIG_DESC_SIZE),      /* wTotalLength: bytes returned */
+  HBYTE(USBD_MSC_CUSTON_HID_CONFIG_DESC_SIZE),      /* wTotalLength: bytes returned */
+  0x02,                                  /* bNumInterfaces: 2 interface */
   0x01,                                  /* bConfigurationValue: configuration value */
-  0x00,                                  /* iConfiguration: index of string descriptor describing
+  0x04,                                  /* iConfiguration: index of string descriptor describing
                                             the configuration */
   0xC0,                                  /* bmAttributes: self powered */
   0x32,                                  /* MaxPower 100 mA: this current is used for detecting vbus */
+
+  // 接口关联描述符(IAD) - 用于复合设备
+  0x08,       // bLength: 8字节
+  0x0B,       // bDescriptorType: 接口关联描述符
+  0x00,       // bFirstInterface: 接口号0
+  0x01,       // bInterfaceCount: 关联的接口数量
+  0x08,       // bFunctionClass: MSC类
+  0x06,       // bFunctionSubClass: SCSI透明命令集
+  0x50,       // bFunctionProtocol: 批量传输协议
+  0x00,       // iFunction: 功能字符串索引
 
   USB_DEVICE_IF_DESC_LEN,                /* bLength: interface descriptor size */
   USB_DESCIPTOR_TYPE_INTERFACE,          /* bDescriptorType: interface descriptor type */
   0x00,                                  /* bInterfaceNumber: number of interface */
   0x00,                                  /* bAlternateSetting: alternate set */
   0x02,                                  /* bNumEndpoints: number of endpoints */
+  USB_CLASS_CODE_MSC,                    /* bInterfaceClass: msc class code */
+  0x06,                                  /* bInterfaceSubClass: subclass code scsi */
+  0x50,                                  /* bInterfaceProtocol: protocol code BBB */
+  0x05,                                  /* iInterface: index of string descriptor */
+
+  USB_DEVICE_EPT_LEN,                    /* bLength: size of endpoint descriptor in bytes */
+  USB_DESCIPTOR_TYPE_ENDPOINT,           /* bDescriptorType: endpoint descriptor type */
+  USBD_MSC_BULK_IN_EPT,                  /* bEndpointAddress: the address of endpoint on usb device described by this descriptor */
+  USB_EPT_DESC_BULK,                     /* bmAttributes: endpoint attributes */
+  LBYTE(USBD_MSC_IN_MAXPACKET_SIZE),
+  HBYTE(USBD_MSC_IN_MAXPACKET_SIZE),         /* wMaxPacketSize: maximum packe size this endpoint */
+  0x00,                                  /* bInterval: interval for polling endpoint for data transfers */
+
+  USB_DEVICE_EPT_LEN,                    /* bLength: size of endpoint descriptor in bytes */
+  USB_DESCIPTOR_TYPE_ENDPOINT,           /* bDescriptorType: endpoint descriptor type */
+  USBD_MSC_BULK_OUT_EPT,                 /* bEndpointAddress: the address of endpoint on usb device described by this descriptor */
+  USB_EPT_DESC_BULK,                     /* bmAttributes: endpoint attributes */
+  LBYTE(USBD_MSC_OUT_MAXPACKET_SIZE),
+  HBYTE(USBD_MSC_OUT_MAXPACKET_SIZE),        /* wMaxPacketSize: maximum packe size this endpoint */
+  0x00,                                  /* bInterval: interval for polling endpoint for data transfers */
+
+  // HID的IAD
+  0x08,       // bLength: 8字节
+  0x0B,       // bDescriptorType: 接口关联描述符
+  0x01,       // bFirstInterface: 接口号1
+  0x01,       // bInterfaceCount: 关联的接口数量(1)
+  0x03,       // bFunctionClass: HID类
+  0x00,       // bFunctionSubClass: 无引导
+  0x00,       // bFunctionProtocol: 无
+  0x00,       // iFunction: HID功能字符串索引
+
+  // HID接口描述符
+  USB_DEVICE_IF_DESC_LEN,                /* bLength: interface descriptor size */
+  USB_DESCIPTOR_TYPE_INTERFACE,          /* bDescriptorType: interface descriptor type */
+  0x01,                                  /* bInterfaceNumber: number of interface */
+  0x00,                                  /* bAlternateSetting: alternate set */
+  0x02,                                  /* bNumEndpoints: number of endpoints */
   USB_CLASS_CODE_HID,                    /* bInterfaceClass: class code hid */
   0x00,                                  /* bInterfaceSubClass: subclass code */
   0x00,                                  /* bInterfaceProtocol: protocol code */
   0x00,                                  /* iInterface: index of string descriptor */
-
+  
+  // HID描述符
   0x09,                                  /* bLength: size of HID descriptor in bytes */
   HID_CLASS_DESC_HID,                    /* bDescriptorType: HID descriptor type */
   LBYTE(CUSHID_BCD_NUM),
@@ -141,6 +193,7 @@ ALIGNED_HEAD static uint8_t g_usbd_configuration[USBD_CUSHID_CONFIG_DESC_SIZE] A
   LBYTE(sizeof(g_usbd_custom_hid_report)),
   HBYTE(sizeof(g_usbd_custom_hid_report)), /* wDescriptorLength: total length of reprot descriptor */
 
+  // HID端点描述符 - 中断输入端点
   USB_DEVICE_EPT_LEN,                    /* bLength: size of endpoint descriptor in bytes */
   USB_DESCIPTOR_TYPE_ENDPOINT,           /* bDescriptorType: endpoint descriptor type */
   USBD_CUSTOM_HID_IN_EPT,                /* bEndpointAddress: the address of endpoint on usb device described by this descriptor */
@@ -149,6 +202,7 @@ ALIGNED_HEAD static uint8_t g_usbd_configuration[USBD_CUSHID_CONFIG_DESC_SIZE] A
   HBYTE(USBD_CUSTOM_IN_MAXPACKET_SIZE),  /* wMaxPacketSize: maximum packe size this endpoint */
   CUSHID_BINTERVAL_TIME,                                  /* bInterval: interval for polling endpoint for data transfers */
 
+  // HID端点描述符 - 中断输出端点
   USB_DEVICE_EPT_LEN,                    /* bLength: size of endpoint descriptor in bytes */
   USB_DESCIPTOR_TYPE_ENDPOINT,           /* bDescriptorType: endpoint descriptor type */
   USBD_CUSTOM_HID_OUT_EPT,               /* bEndpointAddress: the address of endpoint on usb device described by this descriptor */
@@ -157,6 +211,8 @@ ALIGNED_HEAD static uint8_t g_usbd_configuration[USBD_CUSHID_CONFIG_DESC_SIZE] A
   HBYTE(USBD_CUSTOM_OUT_MAXPACKET_SIZE),  /* wMaxPacketSize: maximum packe size this endpoint */
   CUSHID_BINTERVAL_TIME,                    /* bInterval: interval for polling endpoint for data transfers */
 };
+
+
 
 /**
   * @brief usb hid report descriptor
@@ -497,6 +553,7 @@ ALIGNED_HEAD uint8_t g_usbd_custom_hid_report[USBD_CUSHID_SIZ_REPORT_DESC] ALIGN
   0xC0, /* End Collection (HID)  */ 
 };
 
+
 /**
   * @brief usb hid descriptor
   */
@@ -517,15 +574,16 @@ ALIGNED_HEAD uint8_t g_custom_hid_usb_desc[9] ALIGNED_TAIL =
 };
 
 
+
 /**
   * @brief usb string lang id
   */
 #if defined ( __ICCARM__ ) /* iar compiler */
   #pragma data_alignment=4
 #endif
-ALIGNED_HEAD static uint8_t g_string_lang_id[USBD_CUSHID_SIZ_STRING_LANGID] ALIGNED_TAIL =
+ALIGNED_HEAD static uint8_t g_string_lang_id[USBD_MSC_CUSTOM_HID_SIZ_STRING_LANGID] ALIGNED_TAIL =
 {
-  USBD_CUSHID_SIZ_STRING_LANGID,
+  USBD_MSC_CUSTOM_HID_SIZ_STRING_LANGID,
   USB_DESCIPTOR_TYPE_STRING,
   0x09,
   0x04,
@@ -537,9 +595,9 @@ ALIGNED_HEAD static uint8_t g_string_lang_id[USBD_CUSHID_SIZ_STRING_LANGID] ALIG
 #if defined ( __ICCARM__ ) /* iar compiler */
   #pragma data_alignment=4
 #endif
-ALIGNED_HEAD static uint8_t g_string_serial[USBD_CUSHID_SIZ_STRING_SERIAL] ALIGNED_TAIL =
+ALIGNED_HEAD static uint8_t g_string_serial[USBD_MSC_CUSTOM_HID_SIZ_STRING_SERIAL] ALIGNED_TAIL =
 {
-  USBD_CUSHID_SIZ_STRING_SERIAL,
+  USBD_MSC_CUSTOM_HID_SIZ_STRING_SERIAL,
   USB_DESCIPTOR_TYPE_STRING,
 };
 
@@ -554,25 +612,24 @@ static usbd_desc_t device_descriptor =
 /* config descriptor */
 static usbd_desc_t config_descriptor =
 {
-  USBD_CUSHID_CONFIG_DESC_SIZE,
+  USBD_MSC_CUSTON_HID_CONFIG_DESC_SIZE,
   g_usbd_configuration
 };
 
 /* langid descriptor */
 static usbd_desc_t langid_descriptor =
 {
-  USBD_CUSHID_SIZ_STRING_LANGID,
+  USBD_MSC_CUSTOM_HID_SIZ_STRING_LANGID,
   g_string_lang_id
 };
 
 /* serial descriptor */
 static usbd_desc_t serial_descriptor =
 {
-  USBD_CUSHID_SIZ_STRING_SERIAL,
+  USBD_MSC_CUSTOM_HID_SIZ_STRING_SERIAL,
   g_string_serial
 };
 
-static usbd_desc_t vp_desc;
 
 /**
   * @brief  standard usb unicode convert
@@ -593,7 +650,7 @@ static uint16_t usbd_unicode_convert(uint8_t *string, uint8_t *unicode_buf)
   }
 
   str_len = str_len * 2 + 2;
-  unicode_buf[0] = str_len;
+  unicode_buf[0] = (uint8_t)str_len;
   unicode_buf[1] = USB_DESCIPTOR_TYPE_STRING;
 
   return str_len;
@@ -707,7 +764,7 @@ static usbd_desc_t *get_device_lang_id(void)
   */
 static usbd_desc_t *get_device_manufacturer_string(void)
 {
-  vp_desc.length = usbd_unicode_convert((uint8_t *)USBD_CUSHID_DESC_MANUFACTURER_STRING, g_usbd_desc_buffer);
+  vp_desc.length = usbd_unicode_convert((uint8_t *)USBD_MSC_CUSTOM_HID_DESC_MANUFACTURER_STRING, g_usbd_desc_buffer);
   vp_desc.descriptor = g_usbd_desc_buffer;
   return &vp_desc;
 }
@@ -719,7 +776,7 @@ static usbd_desc_t *get_device_manufacturer_string(void)
   */
 static usbd_desc_t *get_device_product_string(void)
 {
-  vp_desc.length = usbd_unicode_convert((uint8_t *)USBD_CUSHID_DESC_PRODUCT_STRING, g_usbd_desc_buffer);
+  vp_desc.length = usbd_unicode_convert((uint8_t *)USBD_MSC_CUSTOM_HID_DESC_PRODUCT_STRING, g_usbd_desc_buffer);
   vp_desc.descriptor = g_usbd_desc_buffer;
   return &vp_desc;
 }
@@ -742,7 +799,7 @@ static usbd_desc_t *get_device_serial_string(void)
   */
 static usbd_desc_t *get_device_interface_string(void)
 {
-  vp_desc.length = usbd_unicode_convert((uint8_t *)USBD_CUSHID_DESC_INTERFACE_STRING, g_usbd_desc_buffer);
+  vp_desc.length = usbd_unicode_convert((uint8_t *)USBD_MSC_CUSTOM_HID_DESC_INTERFACE_STRING, g_usbd_desc_buffer);
   vp_desc.descriptor = g_usbd_desc_buffer;
   return &vp_desc;
 }
@@ -754,7 +811,7 @@ static usbd_desc_t *get_device_interface_string(void)
   */
 static usbd_desc_t *get_device_config_string(void)
 {
-  vp_desc.length = usbd_unicode_convert((uint8_t *)USBD_CUSHID_DESC_CONFIGURATION_STRING, g_usbd_desc_buffer);
+  vp_desc.length = usbd_unicode_convert((uint8_t *)USBD_MSC_CUSTOM_HID_DESC_CONFIGURATION_STRING, g_usbd_desc_buffer);
   vp_desc.descriptor = g_usbd_desc_buffer;
   return &vp_desc;
 }

@@ -2,71 +2,94 @@
 #include "fan_ss6285l.h"
 #include "sensor_aht20.h"
 #include "lvgl.h"
+#include "lv_port_indev.h" // extern indev_encoder
 #include "ff.h"
-#include "calendar_rtc.h"
+#include "calendar_rtc.h" // extern calendar_type calendar;
 #include "usbdevice.h"
 #include "voltage_adc.h"
 #include "stdbool.h"
 #include "stdio.h"
 #include "string.h"
 
-extern lv_indev_t * indev_encoder;
-
-extern void fan_ui(void);
-extern void temp_ui(void);
-extern void humidity_ui(void);
-extern void home_ui(void);
-extern void file_ui(void);
-extern void txt_popup_ui(void);
-extern void time_ui(void);
-extern void gamepad_ui(void);
-extern void voltage_ui(void);
-
 lv_theme_t * theme;
 lv_timer_t * timer;
-lv_group_t * group_home;
-lv_group_t * group_fan;
-lv_group_t * group_temp;
-lv_group_t * group_humidity;
-lv_group_t * group_file;
-lv_group_t * group_txt_popup;
-lv_group_t * group_time;
-lv_group_t * group_gamepad;
-lv_group_t * voltage_group;
-lv_obj_t * scr_home;
-lv_obj_t * scr_fan;
-lv_obj_t * scr_temp;
-lv_obj_t * scr_humidity;
-lv_obj_t * scr_file;
-lv_obj_t * scr_time;
-lv_obj_t * label_temp;
-lv_obj_t * label_humidity;
-lv_obj_t * label_fan_speed_value;
-lv_obj_t * label_current_date;
-lv_obj_t * label_current_time;
-lv_obj_t * ta_txt_popup;
+
+// home UI member
+lv_obj_t * home_scr;
+lv_group_t * home_group;
+void home_ui(void);
+
+// temperature UI member
+lv_obj_t * temp_scr;
+lv_obj_t * temp_btn_back;
+lv_obj_t * temp_label;
+float temperature;
+lv_group_t * temp_group;
+void temp_ui(void);
+
+// humidity UI member
+lv_obj_t * humidity_scr;
+lv_obj_t * humidity_btn_back;
+lv_obj_t * humidity_label;
+float humidity;
+lv_group_t * humidity_group;
+void humidity_ui(void);
+
+// Fan UI member
+lv_obj_t * fan_scr;
+lv_obj_t * fan_btn_back;
+lv_obj_t * fan_label_speed_value;
+int16_t fan_speed;
+lv_group_t * fan_group;
+void fan_ui(void);
+
+// File Explorer UI member
+lv_obj_t * file_scr;
 lv_obj_t * file_explorer;
-lv_obj_t * btn_temp_back;
-lv_obj_t * btn_humidity_back;
-lv_obj_t * btn_fan_back;
-lv_obj_t * btn_file_back;
-lv_obj_t * btn_time_back;
+lv_group_t * file_group;
+char file_file_table_previous_selected_cell_value[128]; // 存储file_table当前被选中单元格的值
+lv_file_explorer_file_table_entry_data_t file_file_table_previous_entry_user_data; // 存储file_table当前被选中单元格的用户数据
+char file_previous_path[128]; // 存储当前路径
+void file_ui(void);
+
+// Txt file popup UI member
+lv_obj_t * txt_popup_ta; 
+lv_group_t * txt_popup_group;
+void txt_popup_ui(void);
+
+// Bin file popup UI member
+lv_obj_t * bin_popup_img_placeholder;
+lv_group_t * bin_popup_group;
+void bin_popup_ui(void);
+
+// Time UI member
+lv_obj_t * time_scr;
+lv_obj_t * time_btn_back;
+lv_obj_t * time_label_current_date;
+lv_obj_t * time_label_current_time;
+lv_group_t * time_group;
+void time_ui(void);
+
+// Voltage UI member
 lv_obj_t * voltage_scr;
 lv_obj_t * voltage_btn_back;
 lv_obj_t * voltage_label_voltage;
+float voltage;
+lv_group_t * voltage_group;
+void voltage_ui(void);
+
+// Gamepad UI member
 lv_obj_t * gamepad_scr;
 lv_obj_t * gamepad_btn_back;
 lv_obj_t * gamepad_btn_up;
 lv_obj_t * gamepad_btn_down;
 lv_obj_t * gamepad_btn_left;
 lv_obj_t * gamepad_btn_right;
+lv_group_t * gamepad_group;
+void gamepad_ui(void);
 
-int16_t fan_speed;
-float temperature;
-float humidity;
-float voltage;
+/*====================== timer callback ======================*/
 
-/*====================== ui entry ======================*/
 static void timer_cb(lv_timer_t * timer)
 {
     temperature = aht20_get_temperature(); //aht20_get_xxx()的实现没有延时80ms等待测量完成，而是直接读取上次测量结果
@@ -74,22 +97,22 @@ static void timer_cb(lv_timer_t * timer)
     voltage = voltage_adc_get_voltage_value();
     rtc_time_get(); //更新值到全局变量calendar
 	
-    if(lv_obj_is_valid(label_temp)) {
-        lv_obj_send_event(label_temp, LV_EVENT_REFRESH, NULL);
+    if(lv_obj_is_valid(temp_label)) {
+        lv_obj_send_event(temp_label, LV_EVENT_REFRESH, NULL);
     }
 
-    if(lv_obj_is_valid(label_humidity)) {
-        lv_obj_send_event(label_humidity, LV_EVENT_REFRESH, NULL);
+    if(lv_obj_is_valid(humidity_label)) {
+        lv_obj_send_event(humidity_label, LV_EVENT_REFRESH, NULL);
     }
 
-    if(lv_obj_is_valid(label_current_date)) {
-        //lv_label_set_text_fmt(label_current_date, "%04d-%02d-%02d", calendar.year, calendar.month, calendar.date);
-        lv_obj_send_event(label_current_date, LV_EVENT_REFRESH, NULL);
+    if(lv_obj_is_valid(time_label_current_date)) {
+        //lv_label_set_text_fmt(time_label_current_date, "%04d-%02d-%02d", calendar.year, calendar.month, calendar.date);
+        lv_obj_send_event(time_label_current_date, LV_EVENT_REFRESH, NULL);
     }
 
-    if(lv_obj_is_valid(label_current_time)) {
-        //lv_label_set_text_fmt(label_current_time, "%02d:%02d:%02d", calendar.hour, calendar.min, calendar.sec);
-        lv_obj_send_event(label_current_time, LV_EVENT_REFRESH, NULL);
+    if(lv_obj_is_valid(time_label_current_time)) {
+        //lv_label_set_text_fmt(time_label_current_time, "%02d:%02d:%02d", calendar.hour, calendar.min, calendar.sec);
+        lv_obj_send_event(time_label_current_time, LV_EVENT_REFRESH, NULL);
     }
 
     if(lv_obj_is_valid(voltage_label_voltage)) {
@@ -100,6 +123,8 @@ static void timer_cb(lv_timer_t * timer)
     return;
 }
 
+/*====================== ui entry ======================*/
+
 void lvgl_ui(void)
 {                 
     home_ui();
@@ -107,6 +132,7 @@ void lvgl_ui(void)
 }
 
 /*====================== home ui ======================*/
+
 static void home_btn_temp_event_cb(lv_event_t * e)
 {
     temp_ui();
@@ -147,19 +173,19 @@ void home_ui()
     /* 设置单色主题 */
     theme = lv_theme_mono_init(lv_display_get_default(), true, &lv_font_montserrat_20);
     lv_display_set_theme(lv_display_get_default(), theme);
-
+    
     /* 创建页面 */
-    scr_home = lv_obj_create(NULL);
+    home_scr = lv_obj_create(NULL);
 
-    lv_obj_t * scr_home_cont = lv_obj_create(scr_home);
-    lv_obj_set_size(scr_home_cont, LV_PCT(100), LV_PCT(100));
-    lv_obj_set_flex_flow(scr_home_cont, LV_FLEX_FLOW_COLUMN);
-    lv_obj_set_style_border_width(scr_home_cont, 0, 0);
-    lv_obj_set_style_pad_top(scr_home_cont, 2, 0);
-    lv_obj_set_style_pad_bottom(scr_home_cont, 8, 0);
-    lv_obj_set_style_pad_left(scr_home_cont, 2, 0);
+    lv_obj_t * home_scr_cont = lv_obj_create(home_scr);
+    lv_obj_set_size(home_scr_cont, LV_PCT(100), LV_PCT(100));
+    lv_obj_set_flex_flow(home_scr_cont, LV_FLEX_FLOW_COLUMN);
+    lv_obj_set_style_border_width(home_scr_cont, 0, 0);
+    lv_obj_set_style_pad_top(home_scr_cont, 2, 0);
+    lv_obj_set_style_pad_bottom(home_scr_cont, 8, 0);
+    lv_obj_set_style_pad_left(home_scr_cont, 2, 0);
 
-    lv_obj_t * btn_temp = lv_button_create(scr_home_cont);
+    lv_obj_t * btn_temp = lv_button_create(home_scr_cont);
     lv_obj_set_style_border_width(btn_temp, 0, 0);
     lv_obj_set_style_pad_hor(btn_temp, 0, 0);
     lv_obj_set_style_pad_ver(btn_temp, 2, 0);
@@ -168,16 +194,16 @@ void home_ui()
     lv_label_set_text(label1, "temp.");
     lv_obj_center(label1);
 
-    lv_obj_t * btn_humidity = lv_button_create(scr_home_cont);
+    lv_obj_t * btn_humidity = lv_button_create(home_scr_cont);
     lv_obj_set_style_border_width(btn_humidity, 0, 0);
     lv_obj_set_style_pad_hor(btn_humidity, 0, 0);
     lv_obj_set_style_pad_ver(btn_humidity, 2, 0);
     lv_obj_add_event_cb(btn_humidity, home_btn_humi_event_cb, LV_EVENT_CLICKED, NULL);
-    lv_obj_t * label_humidity = lv_label_create(btn_humidity);
-    lv_label_set_text(label_humidity, "humidity");
-    lv_obj_center(label_humidity);
+    lv_obj_t * humidity_label = lv_label_create(btn_humidity);
+    lv_label_set_text(humidity_label, "humidity");
+    lv_obj_center(humidity_label);
 
-    lv_obj_t * btn_fan = lv_button_create(scr_home_cont);
+    lv_obj_t * btn_fan = lv_button_create(home_scr_cont);
     lv_obj_set_style_border_width(btn_fan, 0, 0);
     lv_obj_set_style_pad_hor(btn_fan, 0, 0);
     lv_obj_set_style_pad_ver(btn_fan, 2, 0);
@@ -186,7 +212,7 @@ void home_ui()
     lv_label_set_text(label_fan, "fan");
     lv_obj_center(label_fan);
     
-    lv_obj_t * btn_file = lv_button_create(scr_home_cont);
+    lv_obj_t * btn_file = lv_button_create(home_scr_cont);
     lv_obj_set_style_border_width(btn_file, 0, 0);
     lv_obj_set_style_pad_hor(btn_file, 0, 0);
     lv_obj_set_style_pad_ver(btn_file, 2, 0);
@@ -195,7 +221,7 @@ void home_ui()
     lv_label_set_text(label_file, "file");
     lv_obj_center(label_file);
 
-    lv_obj_t * btn_time = lv_button_create(scr_home_cont);
+    lv_obj_t * btn_time = lv_button_create(home_scr_cont);
     lv_obj_set_style_border_width(btn_time, 0, 0);
     lv_obj_set_style_pad_hor(btn_time, 0, 0);
     lv_obj_set_style_pad_ver(btn_time, 2, 0);
@@ -204,7 +230,7 @@ void home_ui()
     lv_label_set_text(label_time, "time");
     lv_obj_center(label_time);
 
-    lv_obj_t * btn_gamepad = lv_button_create(scr_home_cont);
+    lv_obj_t * btn_gamepad = lv_button_create(home_scr_cont);
     lv_obj_set_style_border_width(btn_gamepad, 0, 0);
     lv_obj_set_style_pad_hor(btn_gamepad, 0, 0);
     lv_obj_set_style_pad_ver(btn_gamepad, 2, 0);
@@ -213,7 +239,7 @@ void home_ui()
     lv_label_set_text(label_gamepad, "gamepad");
     lv_obj_center(label_gamepad);
 
-    lv_obj_t * btn_voltage = lv_button_create(scr_home_cont);
+    lv_obj_t * btn_voltage = lv_button_create(home_scr_cont);
     lv_obj_set_style_border_width(btn_voltage, 0, 0);
     lv_obj_set_style_pad_hor(btn_voltage, 0, 0);
     lv_obj_set_style_pad_ver(btn_voltage, 2, 0);
@@ -223,24 +249,24 @@ void home_ui()
     lv_obj_center(label_voltage);
     
     /* 加载页面 */
-    lv_screen_load(scr_home);
+    lv_screen_load(home_scr);
     
     /* 设置group */
-    group_home = lv_group_create();
-    lv_group_add_obj(group_home, btn_temp);
-    lv_group_add_obj(group_home, btn_humidity);
-    lv_group_add_obj(group_home, btn_fan);
-    lv_group_add_obj(group_home, btn_file);
-    lv_group_add_obj(group_home, btn_time);
-    lv_group_add_obj(group_home, btn_gamepad);    
-    lv_group_add_obj(group_home, btn_voltage);
-    lv_indev_set_group(indev_encoder, group_home); 
-    lv_group_set_wrap(group_home, false);
+    home_group = lv_group_create();
+    lv_group_add_obj(home_group, btn_temp);
+    lv_group_add_obj(home_group, btn_humidity);
+    lv_group_add_obj(home_group, btn_fan);
+    lv_group_add_obj(home_group, btn_file);
+    lv_group_add_obj(home_group, btn_time);
+    lv_group_add_obj(home_group, btn_gamepad);    
+    lv_group_add_obj(home_group, btn_voltage);
+    lv_indev_set_group(indev_encoder, home_group); 
+    lv_group_set_wrap(home_group, false);
     lv_group_focus_obj(btn_temp);
 }
 
-
 /*====================== temperature ui ======================*/
+
 static void temp_label_event_cb(lv_event_t * e)
 {
     lv_obj_t * label = lv_event_get_target_obj(e);
@@ -249,50 +275,50 @@ static void temp_label_event_cb(lv_event_t * e)
 
 static void temp_btn_back_event_cb(lv_event_t * e)
 {
-    /* 切换到scr_home页面 */
-    lv_screen_load(scr_home);
-    lv_indev_set_group(indev_encoder, group_home);
+    /* 切换到home_scr页面 */
+    lv_screen_load(home_scr);
+    lv_indev_set_group(indev_encoder, home_group);
     
-    /* 删除temp_ui页面和group_temp组 */
-    lv_obj_del(scr_temp);
-    lv_group_del(group_temp);
+    /* 删除temp_ui页面和temp_group组 */
+    lv_obj_delete_async(temp_scr);
+    lv_group_del(temp_group);
 
-    /* 切换到group_home组 */
-    lv_indev_set_group(indev_encoder, group_home);
+    // /* 切换到home_group组 */
+    // lv_indev_set_group(indev_encoder, home_group);
 }
 
 void temp_ui(void)
 {
     /* 创建页面 */
-    scr_temp = lv_obj_create(NULL);
+    temp_scr = lv_obj_create(NULL);
 
-    label_temp = lv_label_create(scr_temp);
-    lv_obj_center(label_temp);
-    lv_label_set_text(label_temp, "T: --.-°C");
-    lv_obj_add_event_cb(label_temp, temp_label_event_cb, LV_EVENT_REFRESH, NULL);
+    temp_label = lv_label_create(temp_scr);
+    lv_obj_center(temp_label);
+    lv_label_set_text(temp_label, "T: --.-°C");
+    lv_obj_add_event_cb(temp_label, temp_label_event_cb, LV_EVENT_REFRESH, NULL);
 
-    btn_temp_back = lv_button_create(scr_temp);
-    lv_obj_add_event_cb(btn_temp_back, temp_btn_back_event_cb, LV_EVENT_CLICKED, NULL);
-    lv_obj_align(btn_temp_back, LV_ALIGN_BOTTOM_LEFT, 3, -3);
-    lv_obj_set_size(btn_temp_back, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
-    lv_obj_set_style_border_width(btn_temp_back, 0, 0);
-    lv_obj_set_style_pad_all(btn_temp_back, 0, 0);
-    lv_obj_t * label_back = lv_label_create(btn_temp_back);
+    temp_btn_back = lv_button_create(temp_scr);
+    lv_obj_add_event_cb(temp_btn_back, temp_btn_back_event_cb, LV_EVENT_CLICKED, NULL);
+    lv_obj_align(temp_btn_back, LV_ALIGN_BOTTOM_LEFT, 3, -3);
+    lv_obj_set_size(temp_btn_back, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
+    lv_obj_set_style_border_width(temp_btn_back, 0, 0);
+    lv_obj_set_style_pad_all(temp_btn_back, 0, 0);
+    lv_obj_t * label_back = lv_label_create(temp_btn_back);
     lv_label_set_text(label_back, LV_SYMBOL_LEFT);
 
     /* 加载页面 */
-    lv_screen_load(scr_temp);
+    lv_screen_load(temp_scr);
 
     /* 设置group */
-    group_temp = lv_group_create();
-    lv_group_add_obj(group_temp, btn_temp_back);
-    lv_group_set_wrap(group_temp, false);
-    lv_indev_set_group(indev_encoder, group_temp);
-    lv_group_focus_obj(btn_temp_back);
+    temp_group = lv_group_create();
+    lv_group_add_obj(temp_group, temp_btn_back);
+    lv_group_set_wrap(temp_group, false);
+    lv_indev_set_group(indev_encoder, temp_group);
+    lv_group_focus_obj(temp_btn_back);
 }
 
-
 /*====================== humidity ui ======================*/
+
 static void humidity_label_event_cb(lv_event_t * e)
 {
     lv_obj_t * label = lv_event_get_target_obj(e);
@@ -301,77 +327,77 @@ static void humidity_label_event_cb(lv_event_t * e)
 
 static void humidity_btn_back_event_cb(lv_event_t * e)
 {
-    /* 切换到scr_home页面 */
-    lv_screen_load(scr_home);
-    lv_indev_set_group(indev_encoder, group_home);
+    /* 切换到home_scr页面 */
+    lv_screen_load(home_scr);
+    lv_indev_set_group(indev_encoder, home_group);
 
-    /* 删除humidity_ui页面和group_humidity组 */
-    lv_group_del(group_humidity);
-    lv_obj_del(scr_humidity);
+    /* 删除humidity_ui页面和humidity_group组 */
+    lv_group_del(humidity_group);
+    lv_obj_delete_async(humidity_scr);
 
-    /* 切换到group_home组 */
-    lv_indev_set_group(indev_encoder, group_home);
+    // /* 切换到home_group组 */
+    // lv_indev_set_group(indev_encoder, home_group);
 }
 
 void humidity_ui(void)
 {
     /* 创建页面 */
-    scr_humidity = lv_obj_create(NULL);
+    humidity_scr = lv_obj_create(NULL);
 
-    label_humidity = lv_label_create(scr_humidity);
-    lv_obj_center(label_humidity);
-    lv_label_set_text(label_humidity, "H: --.-%");
-    lv_obj_add_event_cb(label_humidity, humidity_label_event_cb, LV_EVENT_REFRESH, NULL);
+    humidity_label = lv_label_create(humidity_scr);
+    lv_obj_center(humidity_label);
+    lv_label_set_text(humidity_label, "H: --.-%");
+    lv_obj_add_event_cb(humidity_label, humidity_label_event_cb, LV_EVENT_REFRESH, NULL);
 
-    btn_humidity_back = lv_button_create(scr_humidity);
-    lv_obj_add_event_cb(btn_humidity_back, humidity_btn_back_event_cb, LV_EVENT_CLICKED, NULL);
-    lv_obj_align(btn_humidity_back, LV_ALIGN_BOTTOM_LEFT, 3, -3);
-    lv_obj_set_size(btn_humidity_back, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
-    lv_obj_set_style_border_width(btn_humidity_back, 0, 0);
-    lv_obj_set_style_pad_all(btn_humidity_back, 0, 0);
-    lv_obj_t * label_back = lv_label_create(btn_humidity_back);
+    humidity_btn_back = lv_button_create(humidity_scr);
+    lv_obj_add_event_cb(humidity_btn_back, humidity_btn_back_event_cb, LV_EVENT_CLICKED, NULL);
+    lv_obj_align(humidity_btn_back, LV_ALIGN_BOTTOM_LEFT, 3, -3);
+    lv_obj_set_size(humidity_btn_back, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
+    lv_obj_set_style_border_width(humidity_btn_back, 0, 0);
+    lv_obj_set_style_pad_all(humidity_btn_back, 0, 0);
+    lv_obj_t * label_back = lv_label_create(humidity_btn_back);
     lv_label_set_text(label_back, LV_SYMBOL_LEFT);
 
     /* 加载页面 */
-    lv_screen_load(scr_humidity);
+    lv_screen_load(humidity_scr);
 
     /* 设置group */
-    group_humidity = lv_group_create();
-    lv_group_add_obj(group_humidity, btn_humidity_back);
-    lv_group_set_wrap(group_humidity, false);
-    lv_indev_set_group(indev_encoder, group_humidity);
-    lv_group_focus_obj(btn_humidity_back);
+    humidity_group = lv_group_create();
+    lv_group_add_obj(humidity_group, humidity_btn_back);
+    lv_group_set_wrap(humidity_group, false);
+    lv_indev_set_group(indev_encoder, humidity_group);
+    lv_group_focus_obj(humidity_btn_back);
 }
 
-
 /*====================== fan ui ======================*/
+
 static void fan_slider_event_cb(lv_event_t * e)
 {
     fan_speed = lv_slider_get_value(lv_event_get_target_obj(e));
     fan_set_speed(fan_speed);
-    lv_label_set_text_fmt(label_fan_speed_value, "%d", fan_speed);
+    lv_label_set_text_fmt(fan_label_speed_value, "%d", fan_speed);
 }
 
 static void fan_btn_back_event_cb(lv_event_t * e)
 {
-    /* 切换到scr_home页面 */
-    lv_screen_load(scr_home);
-    lv_indev_set_group(indev_encoder, group_home);
+    /* 切换到home_scr页面 */
+    lv_screen_load(home_scr);
+    lv_indev_set_group(indev_encoder, home_group);
 
-    /* 删除fan_ui页面和group_fan组 */
-    lv_group_del(group_fan);
-    lv_obj_del(scr_fan);
+    /* 删除fan_ui页面和fan_group组 */
+    lv_group_del(fan_group);
+    lv_obj_delete_async(fan_scr);
 
-    /* 切换到group_home组 */
-    lv_indev_set_group(indev_encoder, group_home);
+    // /* 切换到home_group组 */
+    // lv_indev_set_group(indev_encoder, home_group);
 }
 
 void fan_ui(void) 
 {
     /* 创建页面 */
-    scr_fan = lv_obj_create(NULL);
+    fan_scr = lv_obj_create(NULL);
 
-    lv_obj_t * slider_fan_speed = lv_slider_create(scr_fan);
+    lv_obj_t * slider_fan_speed = lv_slider_create(fan_scr);
     lv_obj_set_size(slider_fan_speed, LV_PCT(60), LV_PCT(30));
     lv_obj_align(slider_fan_speed, LV_ALIGN_BOTTOM_RIGHT, -13, -5);
     lv_obj_set_style_radius(slider_fan_speed, 3, LV_PART_INDICATOR);
@@ -382,52 +408,61 @@ void fan_ui(void)
     lv_slider_set_value(slider_fan_speed, fan_speed, LV_ANIM_OFF);
     lv_obj_add_event_cb(slider_fan_speed, fan_slider_event_cb, LV_EVENT_VALUE_CHANGED, NULL);
 
-    lv_obj_t * label_speed = lv_label_create(scr_fan);
+    lv_obj_t * label_speed = lv_label_create(fan_scr);
     lv_label_set_text(label_speed, "speed");
     lv_obj_align_to(label_speed, slider_fan_speed, LV_ALIGN_OUT_TOP_MID, 0, -5);
 
-    label_fan_speed_value = lv_label_create(scr_fan);
-    lv_label_set_text_fmt(label_fan_speed_value, "%d", fan_speed);
-    lv_obj_align(label_fan_speed_value, LV_ALIGN_TOP_LEFT, 3, 3);
+    fan_label_speed_value = lv_label_create(fan_scr);
+    lv_label_set_text_fmt(fan_label_speed_value, "%d", fan_speed);
+    lv_obj_align(fan_label_speed_value, LV_ALIGN_TOP_LEFT, 3, 3);
 
-    btn_fan_back = lv_button_create(scr_fan);
-    lv_obj_add_event_cb(btn_fan_back, fan_btn_back_event_cb, LV_EVENT_CLICKED, NULL);
-    lv_obj_align(btn_fan_back, LV_ALIGN_BOTTOM_LEFT, 3, -3);
-    lv_obj_set_size(btn_fan_back, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
-    lv_obj_set_style_border_width(btn_fan_back, 0, 0);
-    lv_obj_set_style_pad_all(btn_fan_back, 0, 0);
-    lv_obj_t * label_back = lv_label_create(btn_fan_back);
+    fan_btn_back = lv_button_create(fan_scr);
+    lv_obj_add_event_cb(fan_btn_back, fan_btn_back_event_cb, LV_EVENT_CLICKED, NULL);
+    lv_obj_align(fan_btn_back, LV_ALIGN_BOTTOM_LEFT, 3, -3);
+    lv_obj_set_size(fan_btn_back, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
+    lv_obj_set_style_border_width(fan_btn_back, 0, 0);
+    lv_obj_set_style_pad_all(fan_btn_back, 0, 0);
+    lv_obj_t * label_back = lv_label_create(fan_btn_back);
     lv_label_set_text(label_back, LV_SYMBOL_LEFT);
 
     /* 加载页面 */
-    lv_screen_load(scr_fan);
+    lv_screen_load(fan_scr);
 
     /* 设置group */
-    group_fan = lv_group_create();
-    lv_group_add_obj(group_fan, btn_fan_back);
-    lv_group_add_obj(group_fan, slider_fan_speed);
-    lv_group_set_wrap(group_fan, false);
-    lv_indev_set_group(indev_encoder, group_fan);
-    lv_group_focus_obj(btn_fan_back);
+    fan_group = lv_group_create();
+    lv_group_add_obj(fan_group, fan_btn_back);
+    lv_group_add_obj(fan_group, slider_fan_speed);
+    lv_group_set_wrap(fan_group, false);
+    lv_indev_set_group(indev_encoder, fan_group);
+    lv_group_focus_obj(fan_btn_back);
 }
 
+/*=====================================================================================
+================================= file ui begin =======================================
+=====================================================================================*/
 
-/*====================== file system ui ======================*/
-static void file_btn_back_event_cb(lv_event_t * e)
+static void file_file_explorer_file_table_value_changed_event_cb(lv_event_t * e)
 {
-    /* 切换到scr_home页面 */
-    lv_screen_load(scr_home);
-    lv_indev_set_group(indev_encoder, group_home);
+    uint32_t selected_row, selected_col;
+    const char * selected_cell_value;
+    lv_file_explorer_file_table_entry_data_t * file_table_entry_user_data;
 
-    /* 删除file_ui页面和group_file组 */
-    lv_group_del(group_file);
-    lv_obj_del(scr_file);
+    lv_obj_t * obj = lv_event_get_target(e); //file_table对象
 
-    /* 切换到group_home组 */
-    lv_indev_set_group(indev_encoder, group_home);
+    // 获取选中的file_table单元格值
+    lv_table_get_selected_cell(obj, &selected_row, &selected_col);
+    selected_cell_value = lv_table_get_cell_value(obj, selected_row, selected_col);
+    strcpy(file_file_table_previous_selected_cell_value, selected_cell_value);
+
+    // 获取选中的file_table单元格用户数据
+    file_table_entry_user_data = lv_table_get_cell_user_data(obj, selected_row, selected_col);
+    file_file_table_previous_entry_user_data.file_kind = file_table_entry_user_data->file_kind;
+
+    // 获取路径
+    strcpy(file_previous_path, lv_file_explorer_get_current_path(file_explorer));
 }
 
-static void file_file_explorer_event_cb(lv_event_t * e)
+static void file_file_explorer_file_table_clicked_event_cb(lv_event_t * e)
 {
     lv_fs_file_t f;
     lv_fs_res_t res;
@@ -437,56 +472,71 @@ static void file_file_explorer_event_cb(lv_event_t * e)
     const char * sel_fn;
     char full_path[LV_FILE_EXPLORER_PATH_MAX_LEN];
 
-    lv_event_code_t code = lv_event_get_code(e);
-    lv_obj_t * obj = lv_event_get_target(e);
+    lv_obj_t * obj = lv_event_get_target(e); //file_table对象
 
-    if(code == LV_EVENT_VALUE_CHANGED) {
-        cur_path =  lv_file_explorer_get_current_path(file_explorer);
+    if(file_file_table_previous_entry_user_data.file_kind == LV_FILE_EXPLORER_FILE_KIND_FILE) { // 如果选中的是文件
+        //拼接完整路径
+        cur_path = lv_file_explorer_get_current_path(file_explorer);
         sel_fn = lv_file_explorer_get_selected_file_name(file_explorer);
         snprintf(full_path, sizeof(full_path), "%s%s", cur_path, sel_fn);
-
         if(strstr(sel_fn, ".txt") != NULL) { //如果选中的是以.TXT结尾的文件
-            txt_popup_ui(); //打开txt文件弹窗
-           
-            //读取文件内容并更新到文本区域
+            //打开txt文件弹窗
+            txt_popup_ui(); 
+        
+            //打开txt文件
             res = lv_fs_open(&f, full_path, LV_FS_MODE_RD);
             if(res != LV_FS_RES_OK) printf("Failed to open file. res=%d\n", res);
 
+            //读取txt文件内容到buf
             res = lv_fs_read(&f, buf, sizeof(buf) - 1, &read_num);
             if(res != LV_FS_RES_OK) printf("Failed to read file. res=%d\n", res);
 
-            buf[read_num] = '\0'; //确保字符串以null结尾
-            lv_textarea_set_text(ta_txt_popup, (char*)buf);
-            
+            //确保字符串以null结尾
+            buf[read_num] = '\0';
+
+            //设置txtarea内容为buf
+            lv_textarea_set_text(txt_popup_ta, (char*)buf);
+
+            //关闭txt文件
             lv_fs_close(&f);
+        } else if (strstr(sel_fn, ".bin") != NULL) { //如果选中的是以.BIN结尾的文件
+            //打开bin文件弹窗
+            bin_popup_ui();
+
+            //设置image源为bin文件路径
+            lv_img_set_src(bin_popup_img_placeholder, full_path);
         }
+    } else if (file_file_table_previous_entry_user_data.file_kind == LV_FILE_EXPLORER_FILE_KIND_DIR && // 如果选中的是目录并且是< back并且当前路径是F:0:/
+               strcmp((char *)file_file_table_previous_selected_cell_value, LV_SYMBOL_LEFT "  " "Back") == 0 && 
+               strcmp(file_previous_path, "F:0:/") == 0 ) {
+        /* 切换到home_scr页面 */
+        lv_screen_load(home_scr);
+        lv_indev_set_group(indev_encoder, home_group);
+
+        /* 删除file_ui页面和file_group组 */
+        lv_group_delete(file_group);
+        lv_obj_delete_async(file_scr);
+
+        // /* 切换到home_group组 */
+        // lv_indev_set_group(indev_encoder, home_group);
     }
 }
 
 void file_ui(void)
 {
     /* 创建页面 */
-    scr_file = lv_obj_create(NULL);
+    file_scr = lv_obj_create(NULL);
 
-    lv_obj_t * scr_file_cont = lv_obj_create(scr_file);
-    lv_obj_set_size(scr_file_cont, LV_PCT(100), LV_PCT(100));
-    lv_obj_set_pos(scr_file_cont, 0, 0);
-    lv_obj_set_style_border_width(scr_file_cont, 0, 0);
-    lv_obj_set_flex_flow(scr_file_cont, LV_FLEX_FLOW_ROW);
-    lv_obj_set_flex_align(scr_file_cont, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_END, LV_FLEX_ALIGN_END);
+    lv_obj_t * file_scr_cont = lv_obj_create(file_scr);
+    lv_obj_set_size(file_scr_cont, LV_PCT(100), LV_PCT(100));
+    lv_obj_set_pos(file_scr_cont, 0, 0);
+    lv_obj_set_style_border_width(file_scr_cont, 0, 0);
+    lv_obj_set_flex_flow(file_scr_cont, LV_FLEX_FLOW_ROW);
+    lv_obj_set_flex_align(file_scr_cont, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_END, LV_FLEX_ALIGN_END);
 
-    btn_file_back = lv_button_create(scr_file_cont);
-    lv_obj_add_event_cb(btn_file_back, file_btn_back_event_cb, LV_EVENT_CLICKED, NULL);
-    lv_obj_set_size(btn_file_back, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
-    lv_obj_set_style_border_width(btn_file_back, 0, 0);
-    lv_obj_set_style_pad_all(btn_file_back, 0, 0);
-    lv_obj_t * label_back = lv_label_create(btn_file_back);
-    lv_label_set_text(label_back, LV_SYMBOL_LEFT);
-
-    file_explorer = lv_file_explorer_create(scr_file_cont);
-    lv_obj_set_size(file_explorer, LV_PCT(80), LV_PCT(100));
+    file_explorer = lv_file_explorer_create(file_scr_cont);
+    lv_obj_set_size(file_explorer, LV_PCT(100), LV_PCT(100));
     lv_file_explorer_set_sort(file_explorer, LV_EXPLORER_SORT_KIND);
-    lv_obj_add_event_cb(file_explorer, file_file_explorer_event_cb, LV_EVENT_ALL, NULL);
     lv_file_explorer_open_dir(file_explorer, "F:0:/");
 
     //获取头部
@@ -498,30 +548,30 @@ void file_ui(void)
     lv_obj_t * file_table   = lv_file_explorer_get_file_table(file_explorer);
     lv_obj_set_size(file_table, LV_PCT(100), LV_PCT(70));
     lv_obj_set_style_text_font(file_table, &lv_font_montserrat_16, 0);
+    lv_obj_add_event_cb(file_table, file_file_explorer_file_table_value_changed_event_cb, LV_EVENT_VALUE_CHANGED, NULL);
+    lv_obj_add_event_cb(file_table, file_file_explorer_file_table_clicked_event_cb, LV_EVENT_CLICKED, NULL);
 
     /* 加载页面 */
-    lv_screen_load(scr_file);
+    lv_screen_load(file_scr);
 
     /* 设置group */
-    group_file = lv_group_create();
-    lv_group_add_obj(group_file, btn_file_back);
-    lv_group_add_obj(group_file, file_table);
-    lv_group_set_wrap(group_file, false);
-    lv_indev_set_group(indev_encoder, group_file); 
-    lv_group_focus_obj(btn_file_back);
+    file_group = lv_group_create();
+    lv_group_add_obj(file_group, file_table);
+    lv_group_set_wrap(file_group, false);
+    lv_indev_set_group(indev_encoder, file_group); 
 }
 
+/*====================== txt file popup ui ======================*/
 
-/*====================== txt file open popup ui ======================*/
-static void file_file_explorer_txt_file_open_pupup_btn_back_event_cb(lv_event_t *e)
+static void file_file_explorer_txt_file_pupup_btn_back_event_cb(lv_event_t *e)
 {
     /* 删除页面 */
-    lv_obj_t *container = lv_obj_get_parent(lv_event_get_target(e));
-    lv_obj_del(container);
+    lv_obj_t *root = lv_obj_get_parent(lv_event_get_target(e));
+    lv_obj_delete_async(root);
 
-    /* 切换到group_file组 */
-    lv_group_del(group_txt_popup);
-    lv_indev_set_group(indev_encoder, group_file);
+    /* 切换到file_group组 */
+    lv_group_del(txt_popup_group);
+    lv_indev_set_group(indev_encoder, file_group);
 }
 
 void txt_popup_ui(void)
@@ -531,11 +581,11 @@ void txt_popup_ui(void)
     lv_obj_set_size(container, LV_PCT(85), LV_PCT(85));
     lv_obj_align(container, LV_ALIGN_CENTER, 0, 0);
 
-    ta_txt_popup = lv_textarea_create(container);
-    lv_obj_set_size(ta_txt_popup, LV_PCT(70), LV_PCT(100));
-    lv_obj_align(ta_txt_popup, LV_ALIGN_RIGHT_MID, 0, 0);
-    lv_obj_set_style_border_width(ta_txt_popup, 0, 0);
-    lv_textarea_set_placeholder_text(ta_txt_popup, "");     // 清空提示文本
+    txt_popup_ta = lv_textarea_create(container);
+    lv_obj_set_size(txt_popup_ta, LV_PCT(70), LV_PCT(100));
+    lv_obj_align(txt_popup_ta, LV_ALIGN_RIGHT_MID, 0, 0);
+    lv_obj_set_style_border_width(txt_popup_ta, 0, 0);
+    lv_textarea_set_placeholder_text(txt_popup_ta, "");     // 清空提示文本
 
     lv_obj_t *btn_back = lv_button_create(container);
     lv_obj_set_size(btn_back, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
@@ -544,25 +594,71 @@ void txt_popup_ui(void)
     lv_obj_align(btn_back, LV_ALIGN_BOTTOM_LEFT, 0, 0);
     lv_obj_t * label_back = lv_label_create(btn_back);
     lv_label_set_text(label_back, LV_SYMBOL_LEFT);
-    lv_obj_add_event_cb(btn_back, file_file_explorer_txt_file_open_pupup_btn_back_event_cb, LV_EVENT_CLICKED, NULL);
+    lv_obj_add_event_cb(btn_back, file_file_explorer_txt_file_pupup_btn_back_event_cb, LV_EVENT_CLICKED, NULL);
 
     /* 设置group */
-    group_txt_popup = lv_group_create();
-    lv_group_add_obj(group_txt_popup, btn_back);
-    lv_group_add_obj(group_txt_popup, ta_txt_popup);
-    lv_group_set_wrap(group_txt_popup, false);
-    lv_indev_set_group(indev_encoder, group_txt_popup);
+    txt_popup_group = lv_group_create();
+    lv_group_add_obj(txt_popup_group, btn_back);
+    lv_group_add_obj(txt_popup_group, txt_popup_ta);
+    lv_group_set_wrap(txt_popup_group, false);
+    lv_indev_set_group(indev_encoder, txt_popup_group);
     lv_group_focus_obj(btn_back);
 }
 
+/*====================== bin file popup ui ======================*/
+
+static void file_file_explorer_bin_file_pupup_btn_back_event_cb(lv_event_t *e)
+{
+    /* 删除页面 */
+    lv_obj_t *root = lv_obj_get_parent(lv_event_get_target(e));
+    lv_obj_delete_async(root);
+
+    /* 切换到file_group组 */
+    lv_group_del(bin_popup_group);
+    lv_indev_set_group(indev_encoder, file_group);
+}
+
+void bin_popup_ui(void)
+{
+    /* 创建页面 */
+    lv_obj_t *container = lv_obj_create(lv_scr_act());
+    lv_obj_set_size(container, LV_PCT(85), LV_PCT(85));
+    lv_obj_align(container, LV_ALIGN_CENTER, 0, 0);
+
+    bin_popup_img_placeholder = lv_image_create(container);
+    lv_image_set_src(bin_popup_img_placeholder, LV_SYMBOL_IMAGE);
+    lv_obj_align(bin_popup_img_placeholder, LV_ALIGN_RIGHT_MID, 0, 0);
+
+    lv_obj_t *btn_back = lv_button_create(container);
+    lv_obj_set_size(btn_back, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
+    lv_obj_set_style_border_width(btn_back, 0, 0);
+    lv_obj_set_style_pad_all(btn_back, 0, 0);
+    lv_obj_align(btn_back, LV_ALIGN_BOTTOM_LEFT, 0, 0);
+    lv_obj_t * label_back = lv_label_create(btn_back);
+    lv_label_set_text(label_back, LV_SYMBOL_LEFT);
+    lv_obj_add_event_cb(btn_back, file_file_explorer_bin_file_pupup_btn_back_event_cb, LV_EVENT_CLICKED, NULL);
+
+    /* 设置group */
+    bin_popup_group = lv_group_create();
+    lv_group_add_obj(bin_popup_group, btn_back);
+    lv_group_add_obj(bin_popup_group, bin_popup_img_placeholder);
+    lv_group_set_wrap(bin_popup_group, false);
+    lv_indev_set_group(indev_encoder, bin_popup_group);
+    lv_group_focus_obj(btn_back);
+}
+/*=====================================================================================
+================================= file ui end =========================================
+=====================================================================================*/
+
 /*====================== time ui ======================*/
-static void time_label_current_date_event_cb(lv_event_t * e)
+
+static void time_time_label_current_date_event_cb(lv_event_t * e)
 {
     lv_obj_t * label = lv_event_get_target_obj(e);
     lv_label_set_text_fmt(label, "%04d-%02d-%02d", calendar.year, calendar.month, calendar.date);
 }
 
-static void time_label_current_time_event_cb(lv_event_t * e)
+static void time_time_label_current_time_event_cb(lv_event_t * e)
 {
     lv_obj_t * label = lv_event_get_target_obj(e);
     lv_label_set_text_fmt(label, "%02d:%02d:%02d", calendar.hour, calendar.min, calendar.sec);
@@ -570,66 +666,67 @@ static void time_label_current_time_event_cb(lv_event_t * e)
 
 static void time_btn_back_event_cb(lv_event_t * e)
 {
-    /* 切换到scr_home页面 */
-    lv_screen_load(scr_home);
-    lv_indev_set_group(indev_encoder, group_home);
+    /* 切换到home_scr页面 */
+    lv_screen_load(home_scr);
+    lv_indev_set_group(indev_encoder, home_group);
 
-    /* 删除time_ui页面和group_time组 */
-    lv_group_del(group_time);
-    lv_obj_del(scr_time);
+    /* 删除time_ui页面和time_group组 */
+    lv_group_del(time_group);
+    lv_obj_delete_async(time_scr);
 
-    /* 切换到group_home组 */
-    lv_indev_set_group(indev_encoder, group_home);
+    // /* 切换到home_group组 */
+    // lv_indev_set_group(indev_encoder, home_group);
 }
 
 void time_ui(void)
 {
     /* 创建页面 */
-    scr_time = lv_obj_create(NULL);
+    time_scr = lv_obj_create(NULL);
 
-    label_current_date = lv_label_create(scr_time);
-    lv_obj_align(label_current_date, LV_ALIGN_CENTER, 0, -10);
-    lv_label_set_text(label_current_date, "0000-00-00");
-    lv_obj_add_event_cb(label_current_date, time_label_current_date_event_cb, LV_EVENT_REFRESH, NULL);
+    time_label_current_date = lv_label_create(time_scr);
+    lv_obj_align(time_label_current_date, LV_ALIGN_CENTER, 0, -10);
+    lv_label_set_text(time_label_current_date, "0000-00-00");
+    lv_obj_add_event_cb(time_label_current_date, time_time_label_current_date_event_cb, LV_EVENT_REFRESH, NULL);
 
-    label_current_time = lv_label_create(scr_time);
-    lv_obj_align(label_current_time, LV_ALIGN_CENTER, 0, 10);
-    lv_label_set_text(label_current_time, "00:00:00");
-    lv_obj_add_event_cb(label_current_time, time_label_current_time_event_cb, LV_EVENT_REFRESH, NULL);
+    time_label_current_time = lv_label_create(time_scr);
+    lv_obj_align(time_label_current_time, LV_ALIGN_CENTER, 0, 10);
+    lv_label_set_text(time_label_current_time, "00:00:00");
+    lv_obj_add_event_cb(time_label_current_time, time_time_label_current_time_event_cb, LV_EVENT_REFRESH, NULL);
 
-    btn_time_back = lv_button_create(scr_time);
-    lv_obj_add_event_cb(btn_time_back, time_btn_back_event_cb, LV_EVENT_CLICKED, NULL);
-    lv_obj_align(btn_time_back, LV_ALIGN_BOTTOM_LEFT, 3, -3);
-    lv_obj_set_size(btn_time_back, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
-    lv_obj_set_style_border_width(btn_time_back, 0, 0);
-    lv_obj_set_style_pad_all(btn_time_back, 0, 0);
-    lv_obj_t * label_back = lv_label_create(btn_time_back);
+    time_btn_back = lv_button_create(time_scr);
+    lv_obj_add_event_cb(time_btn_back, time_btn_back_event_cb, LV_EVENT_CLICKED, NULL);
+    lv_obj_align(time_btn_back, LV_ALIGN_BOTTOM_LEFT, 3, -3);
+    lv_obj_set_size(time_btn_back, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
+    lv_obj_set_style_border_width(time_btn_back, 0, 0);
+    lv_obj_set_style_pad_all(time_btn_back, 0, 0);
+    lv_obj_t * label_back = lv_label_create(time_btn_back);
     lv_label_set_text(label_back, LV_SYMBOL_LEFT);
 
     /* 加载页面 */
-    lv_screen_load(scr_time);
+    lv_screen_load(time_scr);
 
     /* 设置group */
-    group_time = lv_group_create();
-    lv_group_add_obj(group_time, btn_time_back);
-    lv_group_set_wrap(group_time, false);
-    lv_indev_set_group(indev_encoder, group_time);
-    lv_group_focus_obj(btn_time_back);
+    time_group = lv_group_create();
+    lv_group_add_obj(time_group, time_btn_back);
+    lv_group_set_wrap(time_group, false);
+    lv_indev_set_group(indev_encoder, time_group);
+    lv_group_focus_obj(time_btn_back);
 }
 
 /*====================== gamepad ui ======================*/
+
 static void gamepad_btn_back_event_cb(lv_event_t * e)
 {
-    /* 切换到scr_home页面 */
-    lv_screen_load(scr_home);
-    lv_indev_set_group(indev_encoder, group_home);
+    /* 切换到home_scr页面 */
+    lv_screen_load(home_scr);
+    lv_indev_set_group(indev_encoder, home_group);
 
-    /* 删除gamepad_ui页面和group_gamepad组 */
-    lv_group_del(group_gamepad);
-    lv_obj_del(gamepad_scr);
+    /* 删除gamepad_ui页面和gamepad_group组 */
+    lv_group_del(gamepad_group);
+    lv_obj_delete_async(gamepad_scr);
 
-    /* 切换到group_home组 */
-    lv_indev_set_group(indev_encoder, group_home);
+    // /* 切换到home_group组 */
+    // lv_indev_set_group(indev_encoder, home_group);
 }
 
 static void gamepad_btn_up_pressed_event_cb(lv_event_t * e)
@@ -735,18 +832,19 @@ void gamepad_ui(void)
     lv_screen_load(gamepad_scr);
 
     /* 设置group */
-    group_gamepad = lv_group_create();
-    lv_group_add_obj(group_gamepad, gamepad_btn_back);
-    lv_group_add_obj(group_gamepad, gamepad_btn_up);
-    lv_group_add_obj(group_gamepad, gamepad_btn_right);
-    lv_group_add_obj(group_gamepad, gamepad_btn_down);
-    lv_group_add_obj(group_gamepad, gamepad_btn_left);
-    lv_group_set_wrap(group_gamepad, false);
-    lv_indev_set_group(indev_encoder, group_gamepad);
+    gamepad_group = lv_group_create();
+    lv_group_add_obj(gamepad_group, gamepad_btn_back);
+    lv_group_add_obj(gamepad_group, gamepad_btn_up);
+    lv_group_add_obj(gamepad_group, gamepad_btn_right);
+    lv_group_add_obj(gamepad_group, gamepad_btn_down);
+    lv_group_add_obj(gamepad_group, gamepad_btn_left);
+    lv_group_set_wrap(gamepad_group, false);
+    lv_indev_set_group(indev_encoder, gamepad_group);
     lv_group_focus_obj(gamepad_btn_back);
 }
 
 /*====================== voltage ui ======================*/
+
 static void voltage_label_voltage_event_cb(lv_event_t * e)
 {
     lv_obj_t * label = lv_event_get_target_obj(e);
@@ -755,16 +853,16 @@ static void voltage_label_voltage_event_cb(lv_event_t * e)
 
 static void voltage_btn_back_event_cb(lv_event_t * e)
 {
-    /* 切换到scr_home页面 */
-    lv_screen_load(scr_home);
-    lv_indev_set_group(indev_encoder, group_home);
+    /* 切换到home_scr页面 */
+    lv_screen_load(home_scr);
+    lv_indev_set_group(indev_encoder, home_group);
 
     /* 删除voltage_ui页面和group_voltage组 */
     lv_group_del(voltage_group);
-    lv_obj_del(voltage_scr);
+    lv_obj_delete_async(voltage_scr);
 
-    /* 切换到group_home组 */
-    lv_indev_set_group(indev_encoder, group_home);
+    // /* 切换到home_group组 */
+    // lv_indev_set_group(indev_encoder, home_group);
 }
 
 void voltage_ui(void)

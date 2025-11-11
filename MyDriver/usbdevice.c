@@ -5,13 +5,13 @@ gamepad_report1_t report1 ={
 	.report_id = 0x01,
 	.left_x = 0x7FFF, .left_y = 0x7FFF,
 	.right_z = 0x7FFF, .right_rz = 0x7FFF,
-  .left_trigger = 0, .right_trigger = 0,
-  .dpad = 0, .buttons = 0, .share_button = 0
+    .left_trigger = 0, .right_trigger = 0,
+    .dpad = 0, .buttons = 0, .share_button = 0
 };
 gamepad_report2_t report2 = {
-  .report_id = 0x02,
-  .enable = 0, .magnitude = {0, 0, 0, 0},
-  .duration = 0, .start_delay = 0, .loop_count = 0
+    .report_id = 0x02,
+    .enable = 0, .magnitude = {0, 0, 0, 0},
+    .duration = 0, .start_delay = 0, .loop_count = 0
 };
 
 void usbdevice_init()
@@ -20,16 +20,16 @@ void usbdevice_init()
 	usb_clock48m_select(USB_CLK_HICK);
 	
 	/* enable usb clock */
-  crm_periph_clock_enable(CRM_USB_PERIPH_CLOCK, TRUE);
-	
-	/* enable usb interrupt */
-  nvic_irq_enable(USBFS_L_CAN1_RX0_IRQn, 5, 0);
-
-  /* usb core init */
-  usbd_core_init(&usb_core_dev, USB, &custom_hid_class_handler, &custom_hid_desc_handler, 0);
-
-  /* enable usb pull-up */
-  usbd_connect(&usb_core_dev);
+    crm_periph_clock_enable(CRM_USB_PERIPH_CLOCK, TRUE);
+        
+    /* enable usb interrupt */
+    nvic_irq_enable(USBFS_L_CAN1_RX0_IRQn, 5, 0);
+    
+    /* usb core init */
+    usbd_core_init(&usb_core_dev, USB, &msc_custom_hid_class_handler, &msc_custom_hid_desc_handler, 0);
+    
+    /* enable usb pull-up */
+    usbd_connect(&usb_core_dev);
 }
 
 /**

@@ -51,12 +51,12 @@
 //  <o>Minimal stack size [words] <0-65535>
 //  <i> Stack for idle task and default task stack in words.
 //  <i> Default: 128
-#define configMINIMAL_STACK_SIZE                  ((uint16_t)(128))
+#define configMINIMAL_STACK_SIZE                  ((uint16_t)(256))
 
 //  <o>Total heap size [bytes] <0-0xFFFFFFFF>
 //  <i> Heap memory size in bytes.
 //  <i> Default: 8192
-#define configTOTAL_HEAP_SIZE                     ((size_t)65536)
+#define configTOTAL_HEAP_SIZE                     ((size_t)40000)
 
 //  <o>Kernel tick frequency [Hz] <0-0xFFFFFFFF>
 //  <i> Kernel tick rate in Hz.
@@ -66,7 +66,7 @@
 //  <o>Timer task stack depth [words] <0-65535>
 //  <i> Stack for timer task in words.
 //  <i> Default: 128
-#define configTIMER_TASK_STACK_DEPTH              128
+#define configTIMER_TASK_STACK_DEPTH              256
 
 //  <o>Timer task priority <0-56>
 //  <i> Timer task priority.
@@ -104,7 +104,7 @@
 //  <i> Enable or disable stack overflow checking.
 //  <i> Callback function vApplicationStackOverflowHook implementation is required when stack checking is enabled.
 //  <i> Default: 0
-#define configCHECK_FOR_STACK_OVERFLOW            2
+#define configCHECK_FOR_STACK_OVERFLOW            0
 
 //  <q>Use idle hook
 //  <i> Enable callback function call on each idle task iteration.
@@ -154,37 +154,37 @@
 //  <i> Define event recording level bitmask for events generated from Tasks functions.
 //  <i> Default: 0x05
 //    <0x00=>Off <0x01=>Errors <0x03=>Errors + API <0x05=>Errors + Operation <0x07=>Errors + API + Operation <0x0F=>All
-#define configEVR_LEVEL_TASKS                     0x05
+#define configEVR_LEVEL_TASKS                     0x07
 
 //  <o>Queue functions
 //  <i> Define event recording level bitmask for events generated from Queue functions.
 //  <i> Default: 0x05
 //    <0x00=>Off <0x01=>Errors <0x03=>Errors + API <0x05=>Errors + Operation <0x07=>Errors + API + Operation <0x0F=>All
-#define configEVR_LEVEL_QUEUE                     0x05
+#define configEVR_LEVEL_QUEUE                     0x07
 
 //  <o>Timer functions
 //  <i> Define event recording level bitmask for events generated from Timer functions.
 //  <i> Default: 0x05
 //    <0x00=>Off <0x01=>Errors <0x03=>Errors + API <0x05=>Errors + Operation <0x07=>Errors + API + Operation <0x0F=>All
-#define configEVR_LEVEL_TIMERS                    0x05
+#define configEVR_LEVEL_TIMERS                    0x07
 
 //  <o>Event Groups functions
 //  <i> Define event recording level bitmask for events generated from Event Groups functions.
 //  <i> Default: 0x05
 //    <0x00=>Off <0x01=>Errors <0x03=>Errors + API <0x05=>Errors + Operation <0x07=>Errors + API + Operation <0x0F=>All
-#define configEVR_LEVEL_EVENTGROUPS               0x05
+#define configEVR_LEVEL_EVENTGROUPS               0x07
 
 //  <o>Heap functions
 //  <i> Define event recording level bitmask for events generated from Heap functions.
 //  <i> Default: 0x05
 //    <0x00=>Off <0x01=>Errors <0x03=>Errors + API <0x05=>Errors + Operation <0x07=>Errors + API + Operation <0x0F=>All
-#define configEVR_LEVEL_HEAP                      0x05
+#define configEVR_LEVEL_HEAP                      0x07
 
 //  <o>Stream Buffer functions
 //  <i> Define event recording level bitmask for events generated from Stream Buffer functions.
 //  <i> Default: 0x05
 //    <0x00=>Off <0x01=>Errors <0x03=>Errors + API <0x05=>Errors + Operation <0x07=>Errors + API + Operation <0x0F=>All
-#define configEVR_LEVEL_STREAMBUFFER              0x05
+#define configEVR_LEVEL_STREAMBUFFER              0x07
 //  </e>
 // </h>
 

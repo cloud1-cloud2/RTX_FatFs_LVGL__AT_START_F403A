@@ -58,7 +58,7 @@ void voltage_adc_init(void)
   while(adc_calibration_status_get(ADC1));
 	
   /* 使能DMA通道和ADC软件触发 */
-	adc_ordinary_software_trigger_enable(ADC1, TRUE);
+  adc_ordinary_software_trigger_enable(ADC1, TRUE);
   dma_channel_enable(DMA1_CHANNEL1, TRUE);
 }
 
